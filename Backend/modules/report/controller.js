@@ -1,0 +1,1 @@
+const Report = require("./model");
