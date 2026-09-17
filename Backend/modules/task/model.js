@@ -15,7 +15,7 @@ const taskSchema = new mongoose.Schema(
     mentor_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Mentor ID is required']
+      default: null
     },
     task_name: {
       type: String,
@@ -32,6 +32,12 @@ const taskSchema = new mongoose.Schema(
     assigned_date: {
       type: Date,
       required: [true, 'Assigned date is required']
+    },
+    // Normalized working date (UTC midnight) of assigned_date. One task per
+    // intern per working day is enforced by the unique compound index below.
+    task_date: {
+      type: Date,
+      required: [true, 'Task date is required']
     },
     due_date: {
       type: Date,
@@ -86,6 +92,8 @@ taskSchema.index({ intern_id: 1 });
 taskSchema.index({ mentor_id: 1 });
 taskSchema.index({ status: 1 });
 taskSchema.index({ assigned_date: 1 });
+// BUSINESS RULE: one daily task per intern per working date.
+taskSchema.index({ intern_id: 1, task_date: 1 }, { unique: true });
 
 // Compile model
 const Task = mongoose.model('Task', taskSchema);

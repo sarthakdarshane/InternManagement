@@ -1,11 +1,47 @@
 const mongoose = require('mongoose');
 
-const internshipSchema = new mongoose.Schema(
+// Internship request subdocument: interns request an available internship;
+// the assigned mentor approves or rejects.
+const requestSchema = new mongoose.Schema(
   {
     intern_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Intern ID is required']
+    },
+    status: {
+      type: String,
+      required: [true, 'Request status is required'],
+      enum: {
+        values: ['PENDING', 'APPROVED', 'REJECTED'],
+        message: 'Request status must be one of: PENDING, APPROVED, REJECTED'
+      },
+      default: 'PENDING'
+    },
+    requested_at: {
+      type: Date,
+      default: Date.now
+    },
+    decided_at: {
+      type: Date,
+      default: null
+    },
+    decided_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+    }
+  },
+  { _id: true }
+);
+
+const internshipSchema = new mongoose.Schema(
+  {
+    // The APPROVED intern. Null while the internship is still available for requests.
+    intern_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
     },
     company_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +74,11 @@ const internshipSchema = new mongoose.Schema(
         values: ['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED'],
         message: 'Status must be one of: PLANNED, ACTIVE, COMPLETED, CANCELLED'
       },
-      default: 'ACTIVE'
+      default: 'PLANNED'
+    },
+    requests: {
+      type: [requestSchema],
+      default: []
     },
     offer_letter: {
       url: {
@@ -82,6 +122,18 @@ internshipSchema.index({ intern_id: 1 });
 internshipSchema.index({ company_id: 1 });
 internshipSchema.index({ mentor_id: 1 });
 internshipSchema.index({ status: 1 });
+internshipSchema.index({ 'requests.intern_id': 1 });
+// An intern can hold at most one open (PLANNED/ACTIVE) internship.
+internshipSchema.index(
+  { intern_id: 1, status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      intern_id: { $type: 'objectId' },
+      status: { $in: ['PLANNED', 'ACTIVE'] }
+    }
+  }
+);
 
 // Compile model
 const Internship = mongoose.model('Internship', internshipSchema);

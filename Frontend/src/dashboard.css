@@ -809,8 +809,8 @@ textarea.form-control {
   text-transform: uppercase;
 }
 
+.role-SUPERADMIN { background: #343a40; color: white; }
 .role-ADMIN { background: #6c757d; color: white; }
-.role-HR { background: #007bff; color: white; }
 .role-MENTOR { background: #28a745; color: white; }
 .role-INTERN { background: #ffc107; color: #333; }
 

@@ -11,6 +11,7 @@ const getSafeTask = (task) => ({
   task_name: task.task_name,
   description: task.description || '',
   assigned_date: task.assigned_date,
+  task_date: task.task_date,
   due_date: task.due_date,
   status: task.status,
   progress: task.progress,
@@ -19,6 +20,20 @@ const getSafeTask = (task) => ({
   created_at: task.createdAt,
   updated_at: task.updatedAt
 });
+
+// ---- BUSINESS RULE HELPERS (minimum required rules) ----
+// task_date is the normalized working date (UTC midnight). The unique
+// {intern_id, task_date} index enforces one task per intern per working date.
+const normalizeTaskDate = (date) => {
+  const d = new Date(date);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+};
+
+// Monday-Friday are working days; Saturday/Sunday are off.
+const isWorkingDay = (date) => {
+  const day = new Date(date).getUTCDay();
+  return day >= 1 && day <= 5;
+};
 
 const createTask = async (req, res, next) => {
   try {
@@ -37,8 +52,10 @@ const createTask = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: 'User not found' });
 
-    if (authUser.role !== 'ADMIN' && authUser.role !== 'HR' && authUser.role !== 'MENTOR') {
-      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN, HR, or MENTOR can create tasks' });
+    // BUSINESS RULE: only ADMIN creates/assigns tasks. MENTOR cannot create or
+    // assign tasks, and SUPERADMIN cannot mutate tasks.
+    if (authUser.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN can create tasks' });
     }
 
     const internship = await Internship.findById(internship_id);
@@ -52,7 +69,7 @@ const createTask = async (req, res, next) => {
     if (!mentor) return res.status(404).json({ success: false, message: 'Mentor not found' });
     if (mentor.role !== 'MENTOR') return res.status(400).json({ success: false, message: 'User is not a mentor' });
 
-    if (authUser.role === 'HR' && authUser.company_id?.toString() !== internship.company_id.toString()) {
+    if (authUser.role === 'ADMIN' && authUser.company_id?.toString() !== internship.company_id.toString()) {
       return res.status(403).json({ success: false, message: 'Can only create tasks for your company' });
     }
 
@@ -64,8 +81,8 @@ const createTask = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Mentor does not belong to this company' });
     }
 
-    if (internship.intern_id.toString() !== intern_id) {
-      return res.status(400).json({ success: false, message: 'Intern is not assigned to this internship' });
+    if (internship.intern_id && internship.intern_id.toString() !== intern_id) {
+      return res.status(400).json({ success: false, message: 'Intern does not belong to this internship' });
     }
 
     if (internship.mentor_id && internship.mentor_id.toString() !== mentor_id) {
@@ -77,6 +94,20 @@ const createTask = async (req, res, next) => {
 
     const due = due_date ? new Date(due_date) : null;
     if (due && due < assigned) return res.status(400).json({ success: false, message: 'Due date cannot be before assigned date' });
+
+    // BUSINESS RULE: one task per intern per working date (Mon-Fri only).
+    // task_date is the UTC-midnight normalization keyed by the unique index.
+    const taskDate = normalizeTaskDate(assigned);
+    if (!isWorkingDay(taskDate)) {
+      return res.status(400).json({ success: false, message: 'Tasks can only be assigned on working days (Monday-Friday). Saturday and Sunday are off.' });
+    }
+
+    // Idempotent duplicate guard; the unique {intern_id, task_date} index is
+    // the race-safe backstop (surfaces as E11000 -> 409 below).
+    const existingTask = await Task.findOne({ intern_id: intern_id, task_date: taskDate }).select('_id');
+    if (existingTask) {
+      return res.status(409).json({ success: false, message: 'This intern already has a task for this working date' });
+    }
 
     const validStatuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'];
     const taskStatus = status && validStatuses.includes(status) ? status : 'PENDING';
@@ -90,13 +121,22 @@ const createTask = async (req, res, next) => {
       task_name: task_name.trim(),
       description: description?.trim() || '',
       assigned_date: assigned,
+      task_date: taskDate,
       due_date: due,
       status: taskStatus,
       progress: taskProgress,
       hours_worked: taskHours
     });
 
-    await task.save();
+    try {
+      await task.save();
+    } catch (saveError) {
+      // Duplicate working-date task raced past the pre-check (unique index).
+      if (saveError.code === 11000) {
+        return res.status(409).json({ success: false, message: 'This intern already has a task for this working date' });
+      }
+      throw saveError;
+    }
     res.status(201).json({ success: true, message: 'Task created', task: getSafeTask(task) });
   } catch (error) { next(error); }
 };
@@ -108,13 +148,13 @@ const getAllTasks = async (req, res, next) => {
 
     let query = {};
 
-    if (authUser.role === 'ADMIN') {
+    if (authUser.role === 'SUPERADMIN') {
       if (req.query.company_id && mongoose.Types.ObjectId.isValid(req.query.company_id)) {
         const companyId = req.query.company_id;
         const internships = await Internship.find({ company_id: companyId }).select('_id');
         query.internship_id = { $in: internships.map(i => i._id) };
       }
-    } else if (authUser.role === 'HR' || authUser.role === 'MENTOR') {
+    } else if (authUser.role === 'ADMIN' || authUser.role === 'MENTOR') {
       if (!authUser.company_id) {
         return res.status(404).json({ success: false, message: 'No company assigned' });
       }
@@ -158,9 +198,9 @@ const getTaskById = async (req, res, next) => {
 
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    if (authUser.role === 'ADMIN') {
-      // Admin can view any task
-    } else if (authUser.role === 'HR' || authUser.role === 'MENTOR') {
+    if (authUser.role === 'SUPERADMIN') {
+      // SUPERADMIN can view any task
+    } else if (authUser.role === 'ADMIN' || authUser.role === 'MENTOR') {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: 'No company assigned' });
 
@@ -186,8 +226,10 @@ const updateTask = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: 'User not found' });
 
-    if (authUser.role !== 'ADMIN' && authUser.role !== 'HR' && authUser.role !== 'MENTOR') {
-      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN, HR, or MENTOR can update tasks' });
+    // BUSINESS RULE: only ADMIN mutates tasks. MENTOR cannot update tasks and
+    // SUPERADMIN cannot mutate tasks.
+    if (authUser.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN can update tasks' });
     }
 
     const task = await Task.findById(id)
@@ -197,7 +239,7 @@ const updateTask = async (req, res, next) => {
 
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    if (authUser.role === 'HR' || authUser.role === 'MENTOR') {
+    if (authUser.role === 'ADMIN' || authUser.role === 'MENTOR') {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: 'No company assigned' });
 
@@ -222,11 +264,25 @@ const updateTask = async (req, res, next) => {
     if (assigned_date !== undefined) {
       const assigned = new Date(assigned_date);
       if (isNaN(assigned.getTime())) return res.status(400).json({ success: false, message: 'Invalid assigned date' });
-      
+
       if (task.due_date && new Date(task.due_date) < assigned) {
         return res.status(400).json({ success: false, message: 'Due date cannot be before assigned date' });
       }
+
+      // Keep task_date in sync with assigned_date (one task per intern per
+      // working date; weekends rejected).
+      const nextTaskDate = normalizeTaskDate(assigned);
+      if (!isWorkingDay(nextTaskDate)) {
+        return res.status(400).json({ success: false, message: 'Tasks can only be assigned on working days (Monday-Friday). Saturday and Sunday are off.' });
+      }
+      const taskInternId = task.intern_id?._id || task.intern_id;
+      const clash = await Task.findOne({ intern_id: taskInternId, task_date: nextTaskDate, _id: { $ne: task._id } }).select('_id');
+      if (clash) {
+        return res.status(409).json({ success: false, message: 'This intern already has a task for this working date' });
+      }
+
       task.assigned_date = assigned;
+      task.task_date = nextTaskDate;
     }
 
     if (due_date !== undefined) {
@@ -259,7 +315,15 @@ const updateTask = async (req, res, next) => {
       task.hours_worked = hours;
     }
 
-    await task.save();
+    try {
+      await task.save();
+    } catch (saveError) {
+      // Duplicate working-date task raced past the pre-check (unique index).
+      if (saveError.code === 11000) {
+        return res.status(409).json({ success: false, message: 'This intern already has a task for this working date' });
+      }
+      throw saveError;
+    }
     res.json({ success: true, message: 'Task updated', task: getSafeTask(task) });
   } catch (error) { next(error); }
 };
@@ -272,8 +336,9 @@ const deleteTask = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: 'User not found' });
 
-    if (authUser.role !== 'ADMIN' && authUser.role !== 'HR') {
-      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN or HR can delete tasks' });
+    // BUSINESS RULE: only ADMIN deletes tasks; SUPERADMIN cannot mutate tasks.
+    if (authUser.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN can delete tasks' });
     }
 
     const task = await Task.findById(id)
@@ -281,7 +346,7 @@ const deleteTask = async (req, res, next) => {
 
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    if (authUser.role === 'HR') {
+    if (authUser.role === 'ADMIN') {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: 'No company assigned' });
 
@@ -346,8 +411,12 @@ const updateTaskStatus = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: 'User not found' });
 
-    if (authUser.role !== 'ADMIN' && authUser.role !== 'HR' && authUser.role !== 'MENTOR') {
-      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN, HR, or MENTOR can update task status' });
+    // BUSINESS RULES: ADMIN may update task status; an INTERN may update the
+    // status/report (status, progress, hours) of their OWN task only. MENTOR
+    // cannot update tasks, and SUPERADMIN cannot mutate tasks.
+    const isIntern = authUser.role === 'INTERN';
+    if (authUser.role !== 'ADMIN' && !isIntern) {
+      return res.status(403).json({ success: false, message: 'Access denied. Only ADMIN or the task owner (INTERN) can update task status' });
     }
 
     const task = await Task.findById(id)
@@ -357,7 +426,12 @@ const updateTaskStatus = async (req, res, next) => {
 
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
 
-    if (authUser.role === 'HR' || authUser.role === 'MENTOR') {
+    if (isIntern) {
+      const taskInternId = task.intern_id?._id || task.intern_id;
+      if (!taskInternId || taskInternId.toString() !== authUser._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Access denied. This is not your task' });
+      }
+    } else {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: 'No company assigned' });
 
@@ -395,5 +469,7 @@ module.exports = {
   getMyTasks,
   getMyAssignedTasks,
   updateTaskStatus,
-  getSafeTask
+  getSafeTask,
+  normalizeTaskDate,
+  isWorkingDay
 };

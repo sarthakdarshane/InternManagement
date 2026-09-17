@@ -11,7 +11,21 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsed = JSON.parse(storedUser);
+        // Only trust locally cached users with a currently-valid role.
+        // Stale/migrated entries are cleared so the user must log in again.
+        const VALID_ROLES = ["SUPERADMIN", "ADMIN", "MENTOR", "INTERN"];
+        if (VALID_ROLES.includes(parsed?.role)) {
+          setUser(parsed);
+        } else {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+      } catch (e) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
     }
     setLoading(false);
   }, []);

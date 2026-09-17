@@ -38,8 +38,8 @@ const UserList = () => {
   }
 
   const roleCounts = {
+    SUPERADMIN: users.filter(u => u.role === 'SUPERADMIN').length,
     ADMIN: users.filter(u => u.role === 'ADMIN').length,
-    HR: users.filter(u => u.role === 'HR').length,
     MENTOR: users.filter(u => u.role === 'MENTOR').length,
     INTERN: users.filter(u => u.role === 'INTERN').length
   };
@@ -48,8 +48,8 @@ const UserList = () => {
     <div className="page">
       <header className="page-header">
         <h1>User Management</h1>
-        <Link to="/admin/users?role=ADMIN" className="btn btn-primary">Admins</Link>
-        <Link to="/admin/users?role=HR" className="btn btn-secondary">HR</Link>
+        <Link to="/admin/users?role=SUPERADMIN" className="btn btn-primary">Super Admins</Link>
+        <Link to="/admin/users?role=ADMIN" className="btn btn-secondary">Admins</Link>
         <Link to="/admin/users?role=MENTOR" className="btn btn-success">Mentors</Link>
         <Link to="/admin/users?role=INTERN" className="btn btn-warning">Interns</Link>
       </header>
@@ -62,12 +62,12 @@ const UserList = () => {
           <p className="stat-number">{users.length}</p>
         </div>
         <div className="stat-card">
-          <h3>Admins</h3>
-          <p className="stat-number">{roleCounts.ADMIN}</p>
+          <h3>Super Admins</h3>
+          <p className="stat-number">{roleCounts.SUPERADMIN}</p>
         </div>
         <div className="stat-card">
-          <h3>HR</h3>
-          <p className="stat-number">{roleCounts.HR}</p>
+          <h3>Admins</h3>
+          <p className="stat-number">{roleCounts.ADMIN}</p>
         </div>
         <div className="stat-card">
           <h3>Mentors</h3>
@@ -83,8 +83,8 @@ const UserList = () => {
           style={{ marginBottom: '20px', maxWidth: '200px' }}
         >
           <option value="">All Users</option>
+          <option value="SUPERADMIN">Super Admins</option>
           <option value="ADMIN">Admins</option>
-          <option value="HR">HR</option>
           <option value="MENTOR">Mentors</option>
           <option value="INTERN">Interns</option>
         </select>

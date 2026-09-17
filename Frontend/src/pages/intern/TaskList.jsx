@@ -13,7 +13,8 @@ const TaskList = () => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const response = await api.get('/tasks/my-tasks');
+        const endpoint = user?.role === 'MENTOR' ? '/tasks/my-assigned-tasks' : '/tasks/my-tasks';
+        const response = await api.get(endpoint);
         setTasks(response.data.tasks || []);
         setLoading(false);
       } catch (error) {
@@ -23,7 +24,7 @@ const TaskList = () => {
       }
     };
     loadTasks();
-  }, []);
+  }, [user?.role]);
 
   if (loading) {
     return (
@@ -63,7 +64,7 @@ const TaskList = () => {
             </thead>
             <tbody>
               {tasks.map(task => (
-                <tr key={task._id}>
+                <tr key={task.id || task._id}>
                   <td><strong>{task.task_name}</strong></td>
                   <td className="text-truncate">{task.description || 'N/A'}</td>
                   <td>

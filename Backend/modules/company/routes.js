@@ -39,8 +39,8 @@ const validateCompany = [
 // All company routes are protected
 router.use(authMiddleware);
 
-// POST /api/companies - Create company (ADMIN only)
-router.post('/', roleMiddleware('ADMIN'), validateCompany, companyController.createCompany);
+// POST /api/companies - Create company (SUPERADMIN only)
+router.post('/', roleMiddleware('SUPERADMIN'), validateCompany, companyController.createCompany);
 
 // GET /api/companies - Get all companies (ADMIN) or own company (others)
 router.get('/', companyController.getAllCompanies);
@@ -48,10 +48,10 @@ router.get('/', companyController.getAllCompanies);
 // GET /api/companies/:id - Get company by ID
 router.get('/:id', companyController.getCompanyById);
 
-// PUT /api/companies/:id - Update company (ADMIN only)
-router.put('/:id', roleMiddleware('ADMIN'), validateCompany, companyController.updateCompany);
+// PUT /api/companies/:id - Update company (SUPERADMIN only)
+router.put('/:id', roleMiddleware('SUPERADMIN'), validateCompany, companyController.updateCompany);
 
-// DELETE /api/companies/:id - Delete company (ADMIN only)
-router.delete('/:id', roleMiddleware('ADMIN'), companyController.deleteCompany);
+// DELETE /api/companies/:id - Delete company (SUPERADMIN only)
+router.delete('/:id', roleMiddleware('SUPERADMIN'), companyController.deleteCompany);
 
 module.exports = router;

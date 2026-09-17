@@ -7,7 +7,8 @@ const generateToken = (user) => {
   const payload = {
     user_id: user._id,
     role: user.role,
-    company_id: user.company_id
+    company_id: user.company_id,
+    token_version: user.token_version || 0
   };
   
   return jwt.sign(payload, process.env.JWT_SECRET, {
@@ -85,13 +86,13 @@ const login = async (req, res, next) => {
       });
     }
     
-    // Find user by email (include password field)
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    // Find user by email (include password and token_version fields)
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password +token_version');
     
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'User not found'
       });
     }
     

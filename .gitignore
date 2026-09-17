@@ -44,3 +44,19 @@ __pycache__/
 *.pid
 *.seed
 *.pid.lock
+
+# Temporary/debug files
+Backend/_tmp_*.js
+Backend/diagnose-*.js
+Backend/fix-*.js
+Backend/rebuild-*.js
+Backend/startmongod*.js
+Backend/test-api*.js
+Backend/test-flow*.js
+Backend/test-full-e2e.js
+Backend/test-mentor-task.js
+Backend/test-passwords.js
+Backend/users-role-backup*.json
+InterTrackerProjectBackend*.js
+InterTrackerProjectmongo_check.txt
+ldfsd

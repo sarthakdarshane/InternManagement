@@ -39,7 +39,7 @@ const createCompany = async (req, res, next) => {
 
 const getAllCompanies = async (req, res, next) => {
   try {
-    if (req.user.role === 'ADMIN') {
+    if (req.user.role === 'SUPERADMIN') {
       const companies = await Company.find().sort({ created_at: -1 });
       res.json({ success: true, count: companies.length, companies: companies.map(getSafeCompany) });
     } else {
@@ -60,7 +60,7 @@ const getCompanyById = async (req, res, next) => {
     }
     const company = await Company.findById(id);
     if (!company) return res.status(404).json({ success: false, message: 'Company not found' });
-    if (req.user.role === 'ADMIN') {
+    if (req.user.role === 'SUPERADMIN') {
       res.json({ success: true, company: getSafeCompany(company) });
     } else {
       const user = await User.findById(req.user.user_id).select('company_id');
@@ -75,7 +75,7 @@ const getCompanyById = async (req, res, next) => {
 const updateCompany = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (req.user.role !== 'ADMIN') return res.status(403).json({ success: false, message: 'Only admins can update companies' });
+    if (req.user.role !== 'SUPERADMIN') return res.status(403).json({ success: false, message: 'Only SUPERADMIN can update companies' });
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'Invalid ID' });
     const company = await Company.findById(id);
     if (!company) return res.status(404).json({ success: false, message: 'Company not found' });
@@ -100,7 +100,7 @@ const updateCompany = async (req, res, next) => {
 const deleteCompany = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (req.user.role !== 'ADMIN') return res.status(403).json({ success: false, message: 'Only admins can delete companies' });
+    if (req.user.role !== 'SUPERADMIN') return res.status(403).json({ success: false, message: 'Only SUPERADMIN can delete companies' });
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'Invalid ID' });
     const company = await Company.findById(id);
     if (!company) return res.status(404).json({ success: false, message: 'Company not found' });

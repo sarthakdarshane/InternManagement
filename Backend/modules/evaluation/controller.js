@@ -42,8 +42,8 @@ const createEvaluation = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: "User not found" });
     
-    if (authUser.role !== "MENTOR" && authUser.role !== "ADMIN") {
-      return res.status(403).json({ success: false, message: "Only mentors or admins can create evaluations" });
+    if (authUser.role !== "MENTOR" && authUser.role !== "SUPERADMIN") {
+      return res.status(403).json({ success: false, message: "Only mentors or SUPERADMIN can create evaluations" });
     }
     
     const intern = await User.findById(intern_id);
@@ -57,17 +57,17 @@ const createEvaluation = async (req, res, next) => {
     
     if (!internship) return res.status(404).json({ success: false, message: "Internship not found" });
     
-    if (internship.intern_id.toString() !== intern_id) {
+    if (String(internship.intern_id?._id || internship.intern_id) !== String(intern_id)) {
       return res.status(400).json({ success: false, message: "Intern is not assigned to this internship" });
     }
     
     if (authUser.role === "MENTOR") {
-      if (!internship.mentor_id || internship.mentor_id.toString() !== authUser._id.toString()) {
+      if (!internship.mentor_id || String(internship.mentor_id?._id || internship.mentor_id) !== String(authUser._id)) {
         return res.status(403).json({ success: false, message: "You are not the mentor for this intern" });
       }
     }
     
-    if (authUser.role === "ADMIN") {
+    if (authUser.role === "SUPERADMIN") {
       const companyId = authUser.company_id;
       if (companyId && internship.company_id && internship.company_id._id.toString() !== companyId.toString()) {
         return res.status(403).json({ success: false, message: "Can only evaluate interns from your company" });
@@ -142,7 +142,7 @@ const getAllEvaluations = async (req, res, next) => {
     
     if (authUser.role === "MENTOR") {
       query.mentor_id = authUser._id;
-    } else if (authUser.role === "HR") {
+    } else if (authUser.role === "ADMIN") {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: "No company assigned" });
       const internships = await Internship.find({ company_id: companyId }).select("_id");
@@ -209,8 +209,8 @@ const updateEvaluation = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: "User not found" });
     
-    if (authUser.role !== "MENTOR" && authUser.role !== "ADMIN") {
-      return res.status(403).json({ success: false, message: "Only mentors or admins can update evaluations" });
+    if (authUser.role !== "MENTOR" && authUser.role !== "SUPERADMIN") {
+      return res.status(403).json({ success: false, message: "Only mentors or SUPERADMIN can update evaluations" });
     }
     
     const evaluation = await Evaluation.findById(id);
@@ -264,8 +264,8 @@ const deleteEvaluation = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: "User not found" });
     
-    if (authUser.role !== "ADMIN" && authUser.role !== "MENTOR") {
-      return res.status(403).json({ success: false, message: "Only admins or mentors can delete evaluations" });
+    if (authUser.role !== "SUPERADMIN" && authUser.role !== "MENTOR") {
+      return res.status(403).json({ success: false, message: "Only SUPERADMIN or mentors can delete evaluations" });
     }
     
     const evaluation = await Evaluation.findById(id);
@@ -306,7 +306,7 @@ const getPerformance = async (req, res, next) => {
       }
     }
     
-    if (authUser.role === "HR") {
+    if (authUser.role === "ADMIN") {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: "No company assigned" });
       const internCompanies = await User.findById(internId).select("company_id");
@@ -418,6 +418,70 @@ const calculatePerformance = async (internId, authUser) => {
   };
 };
 
+const getPendingEvaluations = async (req, res, next) => {
+  try {
+    const authUser = await User.findById(req.user.user_id);
+    if (!authUser) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    const query = { status: 'PENDING' };
+
+    if (authUser.role === 'MENTOR') {
+      const companyId = authUser.company_id;
+      if (!companyId) {
+        return res.status(404).json({ success: false, message: 'No company assigned' });
+      }
+
+      const internIds = await Internship.find({ company_id: companyId })
+        .distinct('intern_id');
+
+      if (internIds.length === 0) {
+        return res.json({ success: true, pending: 0 });
+      }
+
+      query.intern_id = { $in: internIds };
+    }
+
+    const pendingCount = await Evaluation.countDocuments(query);
+    res.json({ success: true, pending: pendingCount });
+  } catch (error) { next(error); }
+};
+
+const getMyEvaluations = async (req, res, next) => {
+  try {
+    const authUser = await User.findById(req.user.user_id);
+    if (!authUser) return res.status(401).json({ success: false, message: 'User not found' });
+
+    if (authUser.role !== 'INTERN') {
+      return res.status(403).json({ success: false, message: 'Only interns can view their own evaluations' });
+    }
+
+    const evaluations = await Evaluation.find({ intern_id: authUser._id })
+      .populate('intern_id', 'name email')
+      .populate('mentor_id', 'name email')
+      .populate('internship_id', 'role_name')
+      .sort({ created_at: -1 });
+
+    res.json({ success: true, count: evaluations.length, evaluations: evaluations.map(getSafeEvaluation) });
+  } catch (error) { next(error); }
+};
+
+const getMyPerformance = async (req, res, next) => {
+  try {
+    const authUser = await User.findById(req.user.user_id);
+    if (!authUser) return res.status(401).json({ success: false, message: 'User not found' });
+
+    if (authUser.role !== 'INTERN') {
+      return res.status(403).json({ success: false, message: 'Only interns can view their own performance' });
+    }
+
+    const performance = await calculatePerformance(authUser._id.toString(), authUser);
+
+    res.json({ success: true, performance });
+  } catch (error) { next(error); }
+};
+
 module.exports = {
   createEvaluation,
   getAllEvaluations,
@@ -425,7 +489,10 @@ module.exports = {
   updateEvaluation,
   deleteEvaluation,
   getPerformance,
+  getMyPerformance,
+  getMyEvaluations,
   getSafeEvaluation,
   calculateFinalScore,
-  calculatePerformance
+  calculatePerformance,
+  getPendingEvaluations
 };

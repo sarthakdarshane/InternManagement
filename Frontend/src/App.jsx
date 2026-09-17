@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";

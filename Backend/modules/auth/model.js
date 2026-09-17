@@ -26,9 +26,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Role is required'],
       enum: {
-        values: ['ADMIN', 'HR', 'MENTOR', 'INTERN'],
-        message: 'Role must be one of: ADMIN, HR, MENTOR, INTERN'
+        values: ['SUPERADMIN', 'ADMIN', 'MENTOR', 'INTERN'],
+        message: 'Role must be one of: SUPERADMIN, ADMIN, MENTOR, INTERN'
       }
+    },
+    // Session/token version: incremented to invalidate previously issued JWTs.
+    // Included when a JWT is issued and verified against the DB on each request,
+    // so a stale token can never authorize a user after a role migration.
+    token_version: {
+      type: Number,
+      default: 0,
+      select: false
     },
     company_id: {
       type: mongoose.Schema.Types.ObjectId,

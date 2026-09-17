@@ -39,9 +39,6 @@ const companySchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-companySchema.index({ name: 1 }, { unique: true });
-
 // Compile model
 const Company = mongoose.model('Company', companySchema);
 

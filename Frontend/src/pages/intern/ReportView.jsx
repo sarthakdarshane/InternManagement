@@ -9,6 +9,7 @@ const ReportView = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedReport, setSelectedReport] = useState(null);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -33,6 +34,11 @@ const ReportView = () => {
       </div>
     );
   }
+
+  const renderSentiment = (sentiment) => {
+    if (!sentiment) return 'N/A';
+    return `Pos: ${sentiment.positive_count || 0} | Neu: ${sentiment.neutral_count || 0} | Neg: ${sentiment.negative_count || 0} | Avg Score: ${sentiment.average_score || 0}`;
+  };
 
   return (
     <div className="page">
@@ -60,29 +66,45 @@ const ReportView = () => {
             </ul>
           </div>
         </div>
+      ) : selectedReport ? (
+        <div className="card" style={{ marginTop: '20px' }}>
+          <header className="page-header">
+            <h3>Report: {selectedReport.report_period || 'N/A'}</h3>
+            <button onClick={() => setSelectedReport(null)} className="btn btn-secondary">Back to list</button>
+          </header>
+          <div className="report-details">
+            <p><strong>Overall Performance:</strong> {selectedReport.overall_performance || 'N/A'}</p>
+            <p><strong>Duration (days):</strong> {selectedReport.duration_days || 0}</p>
+            <p><strong>Expected Working Days:</strong> {selectedReport.expected_working_days || 0}</p>
+            <p><strong>Expected Tasks:</strong> {selectedReport.expected_tasks || 0}</p>
+            <p><strong>Completed Tasks:</strong> {selectedReport.completed_tasks || 0}</p>
+            <p><strong>Pending Tasks:</strong> {selectedReport.pending_tasks || 0}</p>
+            <p><strong>Delayed Tasks:</strong> {selectedReport.delayed_tasks || 0}</p>
+            <p><strong>Completion Percentage:</strong> {selectedReport.completion_percentage || 0}%</p>
+            <p><strong>Total Hours:</strong> {selectedReport.total_hours || 0}</p>
+            <p><strong>Overtime Hours:</strong> {selectedReport.overtime_hours || 0}</p>
+            <p><strong>Evaluation Score:</strong> {selectedReport.evaluation_score || 'N/A'}</p>
+            <p><strong>Sentiment Summary:</strong> {renderSentiment(selectedReport.sentiment_summary)}</p>
+            <p className="text-muted">Generated: {new Date(selectedReport.created_at).toLocaleDateString()}</p>
+          </div>
+        </div>
       ) : (
         <div className="table-container">
           <table className="data-table">
             <thead>
               <tr>
                 <th>Period</th>
-                <th>Status</th>
                 <th>Performance</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {reports.map(report => (
-                <tr key={report._id}>
+                <tr key={report.id}>
                   <td>{report.report_period || 'N/A'}</td>
-                  <td>
-                    <span className={`status-badge status-${report.status?.toLowerCase() || 'active'}`}>
-                      {report.status || 'Active'}
-                    </span>
-                  </td>
                   <td>{report.overall_performance || 'N/A'}</td>
                   <td>
-                    <button className="btn btn-secondary btn-sm">View</button>
+                    <button onClick={() => setSelectedReport(report)} className="btn btn-secondary btn-sm">View</button>
                   </td>
                 </tr>
               ))}

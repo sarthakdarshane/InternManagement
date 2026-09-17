@@ -51,7 +51,7 @@ const Login = () => {
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Email</label>
             <input

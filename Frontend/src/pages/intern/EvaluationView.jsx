@@ -59,36 +59,36 @@ const EvaluationView = () => {
       ) : (
         <div className="evaluations-container">
           {evaluations.map(evaluation => (
-            <div key={evaluation._id} className="evaluation-card">
+            <div key={evaluation.id || evaluation._id} className="evaluation-card">
               <h4>Evaluation by {evaluation.mentor_id?.name || 'Mentor'}</h4>
               <p className="text-muted">{new Date(evaluation.created_at).toLocaleDateString()}</p>
               
               <div className="eval-grid">
                 <div className="eval-item">
                   <label>Communication</label>
-                  <span className="eval-score">{evaluation.communication || 'N/A'}/10</span>
+                  <span className="eval-score">{evaluation.communication || 'N/A'}/100</span>
                 </div>
                 <div className="eval-item">
                   <label>Technical Skill</label>
-                  <span className="eval-score">{evaluation.technical_skill || 'N/A'}/10</span>
+                  <span className="eval-score">{evaluation.technical_skill || 'N/A'}/100</span>
                 </div>
                 <div className="eval-item">
                   <label>Punctuality</label>
-                  <span className="eval-score">{evaluation.punctuality || 'N/A'}/10</span>
+                  <span className="eval-score">{evaluation.punctuality || 'N/A'}/100</span>
                 </div>
                 <div className="eval-item">
                   <label>Task Completion</label>
-                  <span className="eval-score">{evaluation.task_completion || 'N/A'}/10</span>
+                  <span className="eval-score">{evaluation.task_completion || 'N/A'}/100</span>
                 </div>
                 <div className="eval-item">
                   <label>Teamwork</label>
-                  <span className="eval-score">{evaluation.teamwork || 'N/A'}/10</span>
+                  <span className="eval-score">{evaluation.teamwork || 'N/A'}/100</span>
                 </div>
               </div>
 
               <div className="eval-final">
                 <h5>Final Score</h5>
-                <p className="final-score">{evaluation.final_score || 'N/A'}/10</p>
+                <p className="final-score">{evaluation.final_score || 'N/A'}/100</p>
                 <p className="eval-comment">{evaluation.comments || 'No comments'}</p>
               </div>
             </div>

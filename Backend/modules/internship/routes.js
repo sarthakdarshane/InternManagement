@@ -6,18 +6,22 @@ const authMiddleware = require('../../middleware/authMiddleware');
 const roleMiddleware = require('../../middleware/roleMiddleware');
 const { upload } = require('../../config/cloudinary');
 
-// Validation for internship creation
+// Validation for internship creation.
+// intern_id is OPTIONAL: an ADMIN creates an internship that is OPEN for
+// requests; the intern is assigned later when the mentor approves a request.
 const validateInternship = [
   body('intern_id')
-    .notEmpty()
-    .withMessage('Intern ID is required')
+    .optional({ nullable: true, checkFalsy: true })
     .isString()
     .withMessage('Intern ID must be a valid string'),
   body('company_id')
-    .notEmpty()
-    .withMessage('Company ID is required')
+    .optional({ nullable: true, checkFalsy: true })
     .isString()
     .withMessage('Company ID must be a valid string'),
+  body('mentor_id')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .withMessage('Mentor ID must be a valid string'),
   body('role_name')
     .trim()
     .notEmpty()
@@ -80,8 +84,14 @@ const validateMentorAssignment = [
 // All internship routes are protected
 router.use(authMiddleware);
 
-// POST /api/internships - Create internship (ADMIN or HR)
-router.post('/', roleMiddleware('ADMIN', 'HR'), validateInternship, internshipController.createInternship);
+// POST /api/internships - Create internship (ADMIN only; no intern_id required)
+router.post('/', roleMiddleware('ADMIN'), validateInternship, internshipController.createInternship);
+
+// GET /api/internships/my-internship - Get current intern's active/planned internship
+router.get('/my-internship', roleMiddleware('INTERN'), internshipController.getMyInternship);
+
+// GET /api/internships/available - Open internships an INTERN can request
+router.get('/available', roleMiddleware('INTERN'), internshipController.getAvailableInternships);
 
 // GET /api/internships - Get all internships (role-based)
 router.get('/', internshipController.getAllInternships);
@@ -89,18 +99,25 @@ router.get('/', internshipController.getAllInternships);
 // GET /api/internships/:id - Get internship by ID
 router.get('/:id', internshipController.getInternshipById);
 
-// PUT /api/internships/:id - Update internship (ADMIN or HR)
-router.put('/:id', roleMiddleware('ADMIN', 'HR'), internshipController.updateInternship);
+// POST /api/internships/:id/request - INTERN requests an open internship
+router.post('/:id/request', roleMiddleware('INTERN'), internshipController.requestInternship);
 
-// PUT /api/internships/:id/mentor - Assign/unassign mentor (ADMIN or HR)
-router.put('/:id/mentor', roleMiddleware('ADMIN', 'HR'), validateMentorAssignment, internshipController.assignMentor);
+// PUT /api/internships/:id - Update internship (ADMIN only, own company)
+router.put('/:id', roleMiddleware('ADMIN'), internshipController.updateInternship);
 
-// PUT /api/internships/:id/status - Change internship status (ADMIN or HR)
-router.put('/:id/status', roleMiddleware('ADMIN', 'HR'), internshipController.changeStatus);
+// PUT /api/internships/:id/mentor - Assign/unassign mentor (ADMIN only, own company)
+router.put('/:id/mentor', roleMiddleware('ADMIN'), validateMentorAssignment, internshipController.assignMentor);
 
-// Offer Letter Routes
-router.post('/:id/offer-letter', upload.single('offer_letter'), internshipController.uploadOfferLetter);
-router.get('/:id/offer-letter', internshipController.getOfferLetter);
-router.delete('/:id/offer-letter', internshipController.deleteOfferLetter);
+// PUT /api/internships/:id/status - Change internship status (ADMIN only, own company)
+router.put('/:id/status', roleMiddleware('ADMIN'), internshipController.changeStatus);
+
+// Offer Letter Routes - the offer letter belongs to the INTERN:
+// INTERN uploads/deletes their own; MENTOR verifies/views own interns';
+// ADMIN may view own-company offer letters but can never upload/delete.
+router.post('/:id/offer-letter', roleMiddleware('INTERN'), upload.single('offer_letter'), internshipController.uploadOfferLetter);
+router.get('/:id/offer-letter', roleMiddleware('INTERN', 'MENTOR', 'ADMIN'), internshipController.getOfferLetter);
+router.delete('/:id/offer-letter', roleMiddleware('INTERN'), internshipController.deleteOfferLetter);
+
+// GET /api/internships/:id/offer-letter - see offer-letter routes above
 
 module.exports = router;

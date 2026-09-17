@@ -76,7 +76,7 @@ const validateTask = [
       }
       return true;
     }),
-  (req, res, next) => {
+    (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -84,6 +84,7 @@ const validateTask = [
         message: errors.array().map(err => err.msg).join(', ')
       });
     }
+    next();
   }
 ];
 
@@ -185,8 +186,9 @@ const validateStatusUpdate = [
 // All task routes are protected
 router.use(authMiddleware);
 
-// POST /api/tasks - Create task (ADMIN, HR, or MENTOR)
-router.post('/', roleMiddleware('ADMIN', 'HR', 'MENTOR'), validateTask, taskController.createTask);
+// POST /api/tasks - Create/assign task (ADMIN only).
+// MENTOR is a read-only observer and SUPERADMIN has no operational task access.
+router.post('/', roleMiddleware('ADMIN'), validateTask, taskController.createTask);
 
 // GET /api/tasks - Get all tasks (role-based filtering)
 router.get('/', taskController.getAllTasks);
@@ -200,13 +202,13 @@ router.get('/my-assigned-tasks', roleMiddleware('MENTOR'), taskController.getMyA
 // GET /api/tasks/:id - Get task by ID
 router.get('/:id', taskController.getTaskById);
 
-// PUT /api/tasks/:id - Update task (ADMIN, HR, or MENTOR)
-router.put('/:id', roleMiddleware('ADMIN', 'HR', 'MENTOR'), validateTaskUpdate, taskController.updateTask);
+// PUT /api/tasks/:id - Update task (ADMIN only)
+router.put('/:id', roleMiddleware('ADMIN'), validateTaskUpdate, taskController.updateTask);
 
-// PUT /api/tasks/:id/status - Update task status (ADMIN, HR, or MENTOR)
-router.put('/:id/status', roleMiddleware('ADMIN', 'HR', 'MENTOR'), validateStatusUpdate, taskController.updateTaskStatus);
+// PUT /api/tasks/:id/status - Update task status (ADMIN, or the INTERN who owns the task)
+router.put('/:id/status', roleMiddleware('ADMIN', 'INTERN'), validateStatusUpdate, taskController.updateTaskStatus);
 
-// DELETE /api/tasks/:id - Delete task (ADMIN or HR only)
-router.delete('/:id', roleMiddleware('ADMIN', 'HR'), taskController.deleteTask);
+// DELETE /api/tasks/:id - Delete task (ADMIN only)
+router.delete('/:id', roleMiddleware('ADMIN'), taskController.deleteTask);
 
 module.exports = router;

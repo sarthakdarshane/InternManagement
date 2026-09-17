@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -18,6 +18,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const url = error.config?.url;
+    const status = error.response?.status;
+    const data = error.response?.data;
+    console.error("[API Error]", status, url, data);
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");

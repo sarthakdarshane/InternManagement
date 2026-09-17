@@ -106,8 +106,8 @@ const validateDailyUpdateUpdate = [
 // All daily update routes are protected
 router.use(authMiddleware);
 
-// POST /api/daily-updates - Create daily update (INTERN, ADMIN, or HR)
-router.post('/', roleMiddleware('INTERN', 'ADMIN', 'HR'), validateDailyUpdate, dailyUpdateController.createDailyUpdate);
+// POST /api/daily-updates - Create daily report (INTERN only; own task)
+router.post('/', roleMiddleware('INTERN'), validateDailyUpdate, dailyUpdateController.createDailyUpdate);
 
 // GET /api/daily-updates - Get all daily updates (role-based filtering)
 router.get('/', dailyUpdateController.getAllDailyUpdates);
@@ -121,10 +121,10 @@ router.get('/task/:taskId', dailyUpdateController.getDailyUpdatesByTask);
 // GET /api/daily-updates/:id - Get daily update by ID
 router.get('/:id', dailyUpdateController.getDailyUpdateById);
 
-// PUT /api/daily-updates/:id - Update daily update (ADMIN, HR, or INTERN)
-router.put('/:id', roleMiddleware('ADMIN', 'HR', 'INTERN'), validateDailyUpdateUpdate, dailyUpdateController.updateDailyUpdate);
+// PUT /api/daily-updates/:id - Update own daily report (INTERN only)
+router.put('/:id', roleMiddleware('INTERN'), validateDailyUpdateUpdate, dailyUpdateController.updateDailyUpdate);
 
-// DELETE /api/daily-updates/:id - Delete daily update (ADMIN or HR only)
-router.delete('/:id', roleMiddleware('ADMIN', 'HR'), dailyUpdateController.deleteDailyUpdate);
+// DELETE /api/daily-updates/:id - Delete daily report (ADMIN, own company only)
+router.delete('/:id', roleMiddleware('ADMIN'), dailyUpdateController.deleteDailyUpdate);
 
 module.exports = router;

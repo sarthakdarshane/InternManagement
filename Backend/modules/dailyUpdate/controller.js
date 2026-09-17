@@ -1,7 +1,23 @@
-﻿const DailyUpdate = require("./model");
+const DailyUpdate = require("./model");
 const Task = require("../task/model");
+const Internship = require("../internship/model");
 const User = require("../auth/model");
 const mongoose = require("mongoose");
+
+// Monday-Friday are working days; Saturday/Sunday are OFF.
+const isWorkingDay = (date) => {
+  const day = new Date(date).getUTCDay();
+  return day >= 1 && day <= 5;
+};
+
+// Half-open [start, end) range covering one UTC calendar day.
+const dayRange = (date) => {
+  const d = new Date(date);
+  const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { $gte: start, $lt: end };
+};
 
 const getSafeDailyUpdate = (update) => ({
   id: update._id,
@@ -62,7 +78,7 @@ const createDailyUpdate = async (req, res, next) => {
       return res
         .status(404)
         .json({ success: false, message: "Task not found" });
-    if (task.intern_id.toString() !== authUser._id.toString())
+    if (String(task.intern_id?._id || task.intern_id) !== String(authUser._id))
       return res
         .status(403)
         .json({ success: false, message: "This is not your task" });
@@ -94,6 +110,38 @@ const createDailyUpdate = async (req, res, next) => {
         .json({ success: false, message: "Invalid update date" });
     const prog = Math.min(100, Math.max(0, progress));
     const hours = Math.max(0, hours_worked);
+
+    // BUSINESS RULE: reports belong to working days. Saturday and Sunday are
+    // OFF and must never create pending work or a new report.
+    if (!isWorkingDay(update)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Daily reports can only be submitted on working days (Monday-Friday). Saturday and Sunday are off.",
+      });
+    }
+
+    // BUSINESS RULE: idempotent per intern per working date. Re-submitting or
+    // editing the same day's report updates the existing record instead of
+    // creating duplicates (so pending counts never inflate).
+    const existingUpdate = await DailyUpdate.findOne({
+      intern_id: authUser._id,
+      update_date: dayRange(update),
+    });
+    if (existingUpdate) {
+      existingUpdate.task_id = task_id;
+      existingUpdate.description = description.trim();
+      existingUpdate.progress = prog;
+      existingUpdate.hours_worked = hours;
+      existingUpdate.update_date = update;
+      await existingUpdate.save();
+      return res.json({
+        success: true,
+        message: "Daily update saved (existing report for this working day updated)",
+        dailyUpdate: getSafeDailyUpdate(existingUpdate),
+      });
+    }
+
     const dailyUpdate = new DailyUpdate({
       task_id,
       intern_id: authUser._id,
@@ -125,18 +173,33 @@ const getAllDailyUpdates = async (req, res, next) => {
     let query = {};
     if (authUser.role === "INTERN") {
       query.intern_id = authUser._id;
-    } else {
+    } else if (authUser.role === "MENTOR") {
+      // MENTOR: read-only observer scoped strictly to their OWN interns.
+      const myInternships = await Internship.find({ mentor_id: authUser._id }).select("_id");
+      const myTasks = await Task.find({
+        internship_id: { $in: myInternships.map((i) => i._id) },
+      }).select("_id");
+      query.task_id = { $in: myTasks.map((t) => t._id) };
+    } else if (authUser.role === "ADMIN") {
+      // ADMIN: own company only (resolve internships first - internship_id is
+      // a ref, so a nested company_id filter would never match).
       const companyId = authUser.company_id;
       if (!companyId)
         return res
           .status(404)
           .json({ success: false, message: "No company assigned" });
-      const companyIdStr = companyId.toString();
-      const tasks = await Task.find({
-        "internship_id.company_id": companyIdStr,
+      const companyInternships = await Internship.find({
+        company_id: companyId,
       }).select("_id");
-      const taskIds = tasks.map((t) => t._id);
-      query.task_id = { $in: taskIds };
+      const companyTasks = await Task.find({
+        internship_id: { $in: companyInternships.map((i) => i._id) },
+      }).select("_id");
+      query.task_id = { $in: companyTasks.map((t) => t._id) };
+    } else {
+      // SUPERADMIN has no daily-report management.
+      return res
+        .status(403)
+        .json({ success: false, message: "Access denied" });
     }
     if (req.query.start_date) {
       const startDate = new Date(req.query.start_date);
@@ -189,11 +252,44 @@ const getDailyUpdateById = async (req, res, next) => {
       return res
         .status(404)
         .json({ success: false, message: "Daily update not found" });
-    if (
-      authUser.role === "INTERN" &&
-      dailyUpdate.intern_id &&
-      dailyUpdate.intern_id._id.toString() !== authUser._id.toString()
-    ) {
+    // Scope: INTERN -> own reports; MENTOR -> own interns only;
+    // ADMIN -> own company only; SUPERADMIN -> no daily-report access.
+    const taskInternId =
+      dailyUpdate.intern_id && dailyUpdate.intern_id._id
+        ? dailyUpdate.intern_id._id.toString()
+        : dailyUpdate.intern_id
+        ? dailyUpdate.intern_id.toString()
+        : null;
+
+    if (authUser.role === "INTERN") {
+      if (taskInternId !== authUser._id.toString()) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+    } else if (authUser.role === "MENTOR") {
+      const internship = await Internship.findOne({
+        mentor_id: authUser._id,
+        intern_id: taskInternId,
+      }).select("_id");
+      if (!internship) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+    } else if (authUser.role === "ADMIN") {
+      const taskId =
+        dailyUpdate.task_id && dailyUpdate.task_id._id
+          ? dailyUpdate.task_id._id
+          : dailyUpdate.task_id;
+      const task = await Task.findById(taskId).select("internship_id");
+      const internship = task
+        ? await Internship.findById(task.internship_id).select("company_id")
+        : null;
+      if (
+        !authUser.company_id ||
+        !internship ||
+        internship.company_id?.toString() !== authUser.company_id.toString()
+      ) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+    } else {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
     res.json({ success: true, dailyUpdate: getSafeDailyUpdate(dailyUpdate) });
@@ -212,15 +308,19 @@ const updateDailyUpdate = async (req, res, next) => {
       return res
         .status(401)
         .json({ success: false, message: "User not found" });
+    // BUSINESS RULE: only the INTERN who owns the report may edit it.
+    if (authUser.role !== "INTERN") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Only the intern can update their own daily report",
+      });
+    }
     const dailyUpdate = await DailyUpdate.findById(id);
     if (!dailyUpdate)
       return res
         .status(404)
         .json({ success: false, message: "Daily update not found" });
-    if (
-      authUser.role === "INTERN" &&
-      dailyUpdate.intern_id.toString() !== authUser._id.toString()
-    ) {
+    if (dailyUpdate.intern_id.toString() !== authUser._id.toString()) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
     const { description, progress, hours_worked } = req.body;
@@ -260,15 +360,36 @@ const deleteDailyUpdate = async (req, res, next) => {
       return res
         .status(401)
         .json({ success: false, message: "User not found" });
-    if (authUser.role !== "ADMIN" && authUser.role !== "HR")
+    // SUPERADMIN has no daily-report management; ADMIN is limited to their own
+    // company's reports.
+    if (authUser.role !== "ADMIN")
       return res
         .status(403)
-        .json({ success: false, message: "Only admins or HR can delete" });
+        .json({ success: false, message: "Access denied. Only ADMIN can delete daily reports" });
     const dailyUpdate = await DailyUpdate.findById(id);
     if (!dailyUpdate)
       return res
         .status(404)
         .json({ success: false, message: "Daily update not found" });
+
+    if (!authUser.company_id) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No company assigned" });
+    }
+    const task = await Task.findById(dailyUpdate.task_id).select("internship_id");
+    const internship = task
+      ? await Internship.findById(task.internship_id).select("company_id")
+      : null;
+    if (
+      !internship ||
+      internship.company_id?.toString() !== authUser.company_id.toString()
+    ) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Access denied. Report belongs to another company" });
+    }
+
     await DailyUpdate.findByIdAndDelete(id);
     res.json({ success: true, message: "Daily update deleted" });
   } catch (error) {
@@ -323,11 +444,35 @@ const getDailyUpdatesByTask = async (req, res, next) => {
       return res
         .status(404)
         .json({ success: false, message: "Task not found" });
-    if (
-      authUser.role === "INTERN" &&
-      task.intern_id &&
-      task.intern_id._id.toString() !== authUser._id.toString()
-    ) {
+    // Scope: INTERN -> own tasks; MENTOR -> own interns only; ADMIN -> own
+    // company only; SUPERADMIN -> no daily-report access.
+    const ownerInternId = task.intern_id
+      ? (task.intern_id._id || task.intern_id).toString()
+      : null;
+
+    if (authUser.role === "INTERN") {
+      if (ownerInternId !== authUser._id.toString()) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+    } else if (authUser.role === "MENTOR") {
+      const internship = await Internship.findById(task.internship_id).select(
+        "mentor_id"
+      );
+      if (!internship || internship.mentor_id?.toString() !== authUser._id.toString()) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+    } else if (authUser.role === "ADMIN") {
+      const internship = await Internship.findById(task.internship_id).select(
+        "company_id"
+      );
+      if (
+        !authUser.company_id ||
+        !internship ||
+        internship.company_id?.toString() !== authUser.company_id.toString()
+      ) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+    } else {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
     const dailyUpdates = await DailyUpdate.find({ task_id: taskId })

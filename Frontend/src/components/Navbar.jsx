@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,8 +13,8 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (!user) return "/login";
     switch (user.role) {
-      case "ADMIN": return "/admin/dashboard";
-      case "HR": return "/hr/dashboard";
+      case "SUPERADMIN": return "/admin/dashboard";
+      case "ADMIN": return "/hr/dashboard";
       case "MENTOR": return "/mentor/dashboard";
       case "INTERN": return "/intern/dashboard";
       default: return "/login";

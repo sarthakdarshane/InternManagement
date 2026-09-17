@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getOfferLetter, uploadOfferLetter, deleteOfferLetter } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import api, { getOfferLetter, uploadOfferLetter, deleteOfferLetter } from '../../services/api';
 
 const OfferLetterUpload = () => {
   const { id } = useParams();
+  const { user } = useAuth();
+  const canUpload = user?.role === 'INTERN';
   const navigate = useNavigate();
+  const [internshipId, setInternshipId] = useState(id || '');
 
   const [offerLetter, setOfferLetter] = useState(null);
   const [file, setFile] = useState(null);
@@ -14,12 +18,33 @@ const OfferLetterUpload = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadOfferLetter();
-  }, [id]);
+    const load = async () => {
+      if (!id && user?.role === 'INTERN') {
+        try {
+          const response = await api.get('/internships/my-internship');
+          const ownId = response.data.internship?.id || response.data.internship?._id;
+          if (ownId) setInternshipId(String(ownId));
+        } catch (error) {
+          setError(error.response?.data?.message || 'Unable to load your internship');
+        }
+      } else if (!id) {
+        setError('A valid internship is required to manage an offer letter');
+      }
+    };
+    load();
+  }, [id, user?.role]);
 
-  const loadOfferLetter = async () => {
+  useEffect(() => {
+    if (!internshipId) return;
+    loadOfferLetter(internshipId);
+  }, [internshipId]);
+
+  const loadOfferLetter = async (requestedId) => {
+    if (!requestedId) {
+      return;
+    }
     try {
-      const response = await getOfferLetter(id);
+      const response = await getOfferLetter(requestedId);
       if (response.data.success) {
         setOfferLetter(response.data.offer_letter);
         setError('');
@@ -57,6 +82,10 @@ const OfferLetterUpload = () => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    if (!internshipId) {
+      setError('A valid internship is required to upload an offer letter');
+      return;
+    }
     if (!file) {
       setError('Please select a file to upload.');
       return;
@@ -66,7 +95,7 @@ const OfferLetterUpload = () => {
     setError('');
 
     try {
-      const response = await uploadOfferLetter(id, file);
+      const response = await uploadOfferLetter(internshipId, file);
       if (response.data.success) {
         setOfferLetter(response.data.offer_letter);
         setSuccess('Offer letter uploaded successfully!');
@@ -82,7 +111,11 @@ const OfferLetterUpload = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this offer letter?')) {
+    if (!internshipId) {
+      setError('A valid internship is required to delete an offer letter');
+      return;
+    }
+    if (!confirm('Are you sure you want to delete this offer letter?')) {
       return;
     }
 
@@ -90,7 +123,7 @@ const OfferLetterUpload = () => {
     setError('');
 
     try {
-      const response = await deleteOfferLetter(id);
+      const response = await deleteOfferLetter(internshipId);
       if (response.data.success) {
         setOfferLetter(null);
         setSuccess('Offer letter deleted successfully!');
@@ -146,7 +179,7 @@ const OfferLetterUpload = () => {
               </button>
             </div>
           </div>
-        ) : (
+        ) : canUpload ? (
           <div className="upload-section">
             <h3>Upload Offer Letter</h3>
             <p className="upload-hint">
@@ -170,6 +203,8 @@ const OfferLetterUpload = () => {
               </button>
             </form>
           </div>
+        ) : (
+          <div className="empty-state"><p>No offer letter has been uploaded yet.</p></div>
         )}
       </div>
     </div>

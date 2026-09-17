@@ -1,8 +1,9 @@
-﻿const express = require("express");
+const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const sentimentController = require("./controller");
 const authMiddleware = require("../../middleware/authMiddleware");
+const roleMiddleware = require("../../middleware/roleMiddleware");
 
 const validateSentiment = [
   body("update_id")
@@ -31,6 +32,7 @@ const validateSentiment = [
 router.use(authMiddleware);
 
 router.post("/analyze", validateSentiment, sentimentController.createSentiment);
+router.get("/my-sentiment", roleMiddleware("INTERN"), sentimentController.getMySentiment);
 router.get("/update/:updateId", sentimentController.getSentimentByUpdateId);
 router.get("/", sentimentController.getAllSentiments);
 

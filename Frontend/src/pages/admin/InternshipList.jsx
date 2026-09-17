@@ -85,7 +85,7 @@ const InternshipList = () => {
             </thead>
             <tbody>
               {filteredInternships.map(internship => (
-                <tr key={internship._id}>
+                <tr key={internship.id || internship._id}>
                   <td><strong>{internship.role_name}</strong></td>
                   <td>{internship.intern_id?.name || internship.intern?.name || 'N/A'}</td>
                   <td>{internship.company_id?.name || 'N/A'}</td>
@@ -98,10 +98,7 @@ const InternshipList = () => {
                     </span>
                   </td>
                   <td>
-                    <Link to={`/admin/internship/${internship._id}`} className="btn btn-secondary btn-sm">Edit</Link>
-                    <Link to={`/intern/offer-letter/${internship._id}`} className="btn btn-primary btn-sm" target="_blank">
-                      View Offer Letter
-                    </Link>
+                    <span className="text-muted">Company internship</span>
                   </td>
                 </tr>
               ))}

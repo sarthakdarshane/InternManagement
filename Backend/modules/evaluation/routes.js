@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const evaluationController = require("./controller");
@@ -94,11 +94,15 @@ const validateEvaluationUpdate = [
 
 router.use(authMiddleware);
 
-router.post("/", roleMiddleware("MENTOR", "ADMIN"), validateEvaluation, evaluationController.createEvaluation);
+// Evaluations are performed by MENTOR only (SUPERADMIN has no evaluation access).
+router.post("/", roleMiddleware("MENTOR"), validateEvaluation, evaluationController.createEvaluation);
 router.get("/", evaluationController.getAllEvaluations);
+router.get("/pending", roleMiddleware("MENTOR"), evaluationController.getPendingEvaluations);
+router.get("/my-evaluations", roleMiddleware("INTERN"), evaluationController.getMyEvaluations);
+router.get("/performance/my-performance", roleMiddleware("INTERN"), evaluationController.getMyPerformance);
+router.get("/performance/:internId", roleMiddleware("INTERN", "MENTOR", "ADMIN"), evaluationController.getPerformance);
 router.get("/:id", evaluationController.getEvaluationById);
-router.put("/:id", roleMiddleware("MENTOR", "ADMIN"), validateEvaluationUpdate, evaluationController.updateEvaluation);
-router.delete("/:id", roleMiddleware("MENTOR", "ADMIN"), evaluationController.deleteEvaluation);
-router.get("/performance/:internId", roleMiddleware("INTERN", "MENTOR", "HR", "ADMIN"), evaluationController.getPerformance);
+router.put("/:id", roleMiddleware("MENTOR"), validateEvaluationUpdate, evaluationController.updateEvaluation);
+router.delete("/:id", roleMiddleware("MENTOR"), evaluationController.deleteEvaluation);
 
 module.exports = router;

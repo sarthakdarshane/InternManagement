@@ -1,4 +1,4 @@
-﻿const Report = require("./model");
+const Report = require("./model");
 const Task = require("../task/model");
 const DailyUpdate = require("../dailyUpdate/model");
 const Sentiment = require("../sentiment/model");
@@ -102,12 +102,14 @@ const calculateSentimentSummary = async (internId, startDate, endDate) => {
 const getEvaluationSummary = async (internId, startDate, endDate) => {
   const evaluations = await Evaluation.find({
     intern_id: internId,
-    created_at: { $gte: startDate, $lte: endDate }
+    // `created_at` was never a schema field (timestamps:true yields `createdAt`),
+    // so Mongoose strict mode silently dropped the filter. Same formula, fixed field.
+    createdAt: { $gte: startDate, $lte: endDate }
   });
   
   if (evaluations.length === 0) return null;
   
-  const latestEvaluation = evaluations.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  const latestEvaluation = evaluations.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   
   return {
     communication: latestEvaluation.communication,
@@ -166,7 +168,7 @@ const generateMonthlyReport = async (internId, month, year) => {
     overallPerformance = "POOR";
   }
   
-  const report = new Report({
+  const reportData = {
     intern_id: internId,
     company_id: internship.company_id,
     internship_id: internship._id,
@@ -183,9 +185,19 @@ const generateMonthlyReport = async (internId, month, year) => {
     sentiment_summary: sentimentSummary,
     evaluation_score: evaluationScore,
     overall_performance: overallPerformance
-  });
+  };
   
-  await report.save();
+  // Idempotent: regenerating the same intern/internship/period updates the
+  // existing report instead of creating duplicates.
+  const report = await Report.findOneAndUpdate(
+    {
+      intern_id: internId,
+      internship_id: internship._id,
+      report_period: reportPeriod
+    },
+    { $set: reportData },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
   
   return getSafeReport(report);
 };
@@ -205,18 +217,29 @@ const getReportById = async (req, res, next) => {
     
     if (!report) return res.status(404).json({ success: false, message: "Report not found" });
     
-    if (authUser.role === "INTERN" && report.intern_id._id.toString() !== authUser._id.toString()) {
+    // Report is a platform-intern artefact; SUPERADMIN is companies-only.
+    if (authUser.role === "SUPERADMIN") {
+      return res.status(403).json({ success: false, message: "Access denied. SUPERADMIN does not manage intern reports" });
+    }
+    const reportInternId = report.intern_id && report.intern_id._id ? report.intern_id._id.toString() : (report.intern_id ? report.intern_id.toString() : null);
+    const reportCompanyId = report.company_id && report.company_id._id ? report.company_id._id.toString() : (report.company_id ? report.company_id.toString() : null);
+    if (authUser.role === "INTERN" && reportInternId !== authUser._id.toString()) {
       return res.status(403).json({ success: false, message: "Access denied. This is not your report" });
     }
     
-    if (authUser.role === "HR" || authUser.role === "MENTOR") {
+    if (authUser.role === "ADMIN") {
       const companyId = authUser.company_id;
       if (!companyId) return res.status(404).json({ success: false, message: "No company assigned" });
-      if (report.company_id.toString() !== companyId.toString()) {
+      if (reportCompanyId !== companyId.toString()) {
         return res.status(403).json({ success: false, message: "Access denied. Report belongs to another company" });
       }
     }
     
+    // Mentor: only interns they actually mentor.
+    if (authUser.role === "MENTOR") {
+      const mine = await Internship.findOne({ mentor_id: authUser._id, intern_id: reportInternId }).select("_id");
+      if (!mine) return res.status(403).json({ success: false, message: "Access denied. This intern is not assigned to you" });
+    }
     res.json({ success: true, report: getSafeReport(report) });
   } catch (error) { next(error); }
 };
@@ -228,16 +251,15 @@ const getReports = async (req, res, next) => {
     
     let query = {};
     
-    if (authUser.role === "ADMIN") {
-      if (req.query.company_id && mongoose.Types.ObjectId.isValid(req.query.company_id)) {
-        query.company_id = req.query.company_id;
-      }
-    } else if (authUser.role === "HR") {
+    // SUPERADMIN is companies-only; no mentor-level intern-report functionality.
+    if (authUser.role === "SUPERADMIN") {
+      return res.status(403).json({ success: false, message: "Access denied. SUPERADMIN does not manage intern reports" });
+    } else if (authUser.role === "ADMIN") {
       if (!authUser.company_id) return res.status(404).json({ success: false, message: "No company assigned" });
       query.company_id = authUser.company_id;
     } else if (authUser.role === "MENTOR") {
       const internships = await Internship.find({ mentor_id: authUser._id }).select("intern_id");
-      const internIds = internships.map(i => i.intern_id);
+      const internIds = internships.map(i => i.intern_id).filter(Boolean);
       query.intern_id = { $in: internIds };
     } else {
       query.intern_id = authUser._id;
@@ -267,7 +289,7 @@ const getReports = async (req, res, next) => {
       .populate("intern_id", "name email")
       .populate("company_id", "name")
       .populate("internship_id", "role_name")
-      .sort({ created_at: -1 });
+      .sort({ createdAt: -1 });
     
     res.json({ success: true, count: reports.length, reports: reports.map(getSafeReport) });
   } catch (error) { next(error); }
@@ -286,7 +308,7 @@ const getMyReports = async (req, res, next) => {
       .populate("intern_id", "name email")
       .populate("company_id", "name")
       .populate("internship_id", "role_name")
-      .sort({ created_at: -1 });
+      .sort({ createdAt: -1 });
     
     res.json({ success: true, count: reports.length, reports: reports.map(getSafeReport) });
   } catch (error) { next(error); }
@@ -302,13 +324,13 @@ const getMentorReports = async (req, res, next) => {
     }
     
     const internships = await Internship.find({ mentor_id: authUser._id }).select("intern_id");
-    const internIds = internships.map(i => i.intern_id);
+    const internIds = internships.map(i => i.intern_id).filter(Boolean);
     
     const reports = await Report.find({ intern_id: { $in: internIds } })
       .populate("intern_id", "name email")
       .populate("company_id", "name")
       .populate("internship_id", "role_name")
-      .sort({ created_at: -1 });
+      .sort({ createdAt: -1 });
     
     res.json({ success: true, count: reports.length, reports: reports.map(getSafeReport) });
   } catch (error) { next(error); }
@@ -322,8 +344,8 @@ const regenerateReport = async (req, res, next) => {
     const authUser = await User.findById(req.user.user_id);
     if (!authUser) return res.status(401).json({ success: false, message: "User not found" });
     
-    if (authUser.role !== "ADMIN") {
-      return res.status(403).json({ success: false, message: "Only admins can regenerate reports" });
+    if (authUser.role !== "SUPERADMIN") {
+      return res.status(403).json({ success: false, message: "Only SUPERADMIN can regenerate reports" });
     }
     
     const report = await Report.findById(id);
