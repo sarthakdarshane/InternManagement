@@ -86,8 +86,10 @@ router.use(authMiddleware);
 router.post('/hr', roleMiddleware('SUPERADMIN'), validateUserCreation, userController.createHR);
 
 // POST /api/users/mentor - Create Mentor account for the ADMIN's own company
-// (BUSINESS RULE: a mentor belongs to exactly one company; ADMIN assigns)
-router.post('/mentor', roleMiddleware('ADMIN'), validateUserCreation, userController.createMentor);
+// (BUSINESS RULE: a mentor belongs to exactly one company; ADMIN assigns.
+// company_id is optional and, when supplied, must equal the ADMIN's own
+// company; cross-company attempts are rejected 403 by the controller.)
+router.post('/mentor', roleMiddleware('ADMIN'), validateMentorCreation, userController.createMentor);
 
 // GET /api/users/mentors - Own-company mentors with per-mentor intern counts (ADMIN only)
 router.get('/mentors', roleMiddleware('ADMIN'), userController.getCompanyMentors);

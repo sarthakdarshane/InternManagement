@@ -27,7 +27,23 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("user");
       }
     }
-    setLoading(false);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    api.get("/auth/me")
+      .then((response) => {
+        const currentUser = response.data.user;
+        localStorage.setItem("user", JSON.stringify(currentUser));
+        setUser(currentUser);
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
@@ -35,8 +51,11 @@ export const AuthProvider = ({ children }) => {
     const { token, user } = response.data;
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
-    setUser(user);
-    return user;
+    const currentUserResponse = await api.get("/auth/me");
+    const currentUser = currentUserResponse.data.user || user;
+    localStorage.setItem("user", JSON.stringify(currentUser));
+    setUser(currentUser);
+    return currentUser;
   };
 
   const register = async (name, email, password) => {

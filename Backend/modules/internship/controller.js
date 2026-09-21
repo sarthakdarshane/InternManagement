@@ -213,6 +213,11 @@ const requestInternship = async (req, res, next) => {
     const openInternship = await Internship.findOne({ intern_id: authUser._id, status: { $in: ['PLANNED', 'ACTIVE'] } }).select('_id');
     if (openInternship) return res.status(409).json({ success: false, message: 'You already have a planned or active internship' });
 
+    // One-internship rule: a PENDING request on ANY internship blocks a new
+    // request elsewhere (second request while pending -> 409).
+    const pendingElsewhere = await Internship.findOne({ _id: { $ne: internship._id }, requests: { $elemMatch: { intern_id: authUser._id, status: 'PENDING' } } }).select('_id');
+    if (pendingElsewhere) return res.status(409).json({ success: false, message: 'You already have a pending internship request' });
+
     const existingRequest = (internship.requests || []).find((r) => String(r.intern_id) === String(authUser._id));
     if (existingRequest && existingRequest.status === 'PENDING') {
       return res.status(409).json({ success: false, message: 'You already have a pending request for this internship' });

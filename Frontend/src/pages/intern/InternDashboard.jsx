@@ -9,6 +9,11 @@ const InternDashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [updates, setUpdates] = useState([]);
   const [internship, setInternship] = useState(null);
+  const [availableInternships, setAvailableInternships] = useState([]);
+  const [showAvailable, setShowAvailable] = useState(false);
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [requestingId, setRequestingId] = useState(null);
+  const [requestError, setRequestError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const today = new Date();
@@ -24,7 +29,8 @@ const InternDashboard = () => {
         const results = await Promise.allSettled([
           api.get('/tasks/my-tasks'),
           api.get('/daily-updates/my-updates'),
-          api.get('/internships/my-internship')
+          api.get('/internships/my-internship'),
+          api.get('/internships/available')
         ]);
 
         let authError = null;
@@ -33,6 +39,7 @@ const InternDashboard = () => {
         const tasksResult = results[0];
         const updatesResult = results[1];
         const internshipResult = results[2];
+        const availableResult = results[3];
 
         const tasks = (tasksResult.status === 'fulfilled' && tasksResult.value?.data?.tasks) || [];
         const updates = (updatesResult.status === 'fulfilled' && updatesResult.value?.data?.dailyUpdates) || [];
@@ -56,6 +63,13 @@ const InternDashboard = () => {
             internshipApiError = internshipApiResponse.message || 'Failed to load internship data';
           }
           setInternship(internshipApiResponse.internship || null);
+        }
+        if (availableResult.status === 'fulfilled') {
+          const available = availableResult.value?.data?.internships || [];
+          setAvailableInternships(available);
+          if (available.some((item) => item.my_request_status === 'PENDING')) {
+            setRequestStatus('PENDING');
+          }
         }
 
         for (const result of results) {
@@ -105,6 +119,46 @@ const InternDashboard = () => {
 
     loadData();
   }, [logout]);
+
+  const loadAvailableInternships = async () => {
+    setRequestError('');
+    setShowAvailable(true);
+    try {
+      const response = await api.get('/internships/available');
+      setAvailableInternships(response.data.internships || []);
+    } catch (error) {
+      setRequestError(error.response?.status === 403
+        ? 'Only interns can browse available internships.'
+        : error.response?.data?.message || 'Unable to load available internships.');
+    }
+  };
+
+  const refreshInternshipState = async () => {
+    const response = await api.get('/internships/my-internship');
+    setInternship(response.data.internship || null);
+    return response.data.internship || null;
+  };
+
+  const requestInternship = async (internshipId) => {
+    setRequestingId(internshipId);
+    setRequestError('');
+    try {
+      await api.post(`/internships/${internshipId}/request`);
+      setRequestStatus('PENDING');
+      setShowAvailable(false);
+      await refreshInternshipState();
+    } catch (error) {
+      if (error.response?.status === 409) {
+        setRequestStatus('PENDING');
+        setRequestError('You already have a pending or active internship request.');
+        await refreshInternshipState();
+      } else {
+        setRequestError(error.response?.data?.message || 'Unable to request this internship.');
+      }
+    } finally {
+      setRequestingId(null);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -199,7 +253,33 @@ const InternDashboard = () => {
             </div>
           ) : (
             <div className="empty-state">
-              <p>No active internship found.</p>
+              <h3>No Active Internship</h3>
+              {requestStatus === 'PENDING' ? (
+                <p>Internship Request<br />Status: Pending Approval</p>
+              ) : (
+                <>
+                  <p>You don't currently have an internship.</p>
+                  <button className="btn btn-primary" onClick={loadAvailableInternships}>Add Internship</button>
+                </>
+              )}
+            </div>
+          )}
+          {requestError && <div className="error-message">{requestError}</div>}
+          {showAvailable && !internship && requestStatus !== 'PENDING' && (
+            <div className="available-internships">
+              <h3>Available Internships</h3>
+              {availableInternships.length === 0 ? <p>No internships are currently available.</p> : availableInternships.map((available) => (
+                <div className="internship-card" key={available.id || available._id}>
+                  <h4>{available.company?.name || available.company_id?.name || 'Company'}</h4>
+                  <p><strong>Role:</strong> {available.role_name}</p>
+                  <p><strong>Start Date:</strong> {new Date(available.start_date).toLocaleDateString()}</p>
+                  {available.end_date && <p><strong>End Date:</strong> {new Date(available.end_date).toLocaleDateString()}</p>}
+                  {available.description && <p>{available.description}</p>}
+                  <button className="btn btn-success" onClick={() => requestInternship(available.id || available._id)} disabled={requestingId !== null}>
+                    {requestingId === (available.id || available._id) ? 'Requesting...' : 'Request Internship'}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </section>

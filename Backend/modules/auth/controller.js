@@ -1,4 +1,5 @@
 const User = require('./model');
+const Company = require('../company/model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -140,6 +141,14 @@ const getCurrentUser = async (req, res, next) => {
       });
     }
     
+    // Expose the user's company name so the frontend can reliably display
+    // the ADMIN's company without a second lookup or hardcoded values.
+    let company_name = null;
+    if (user.company_id) {
+      const company = await Company.findById(user.company_id).select('name');
+      if (company) company_name = company.name;
+    }
+
     res.status(200).json({
       success: true,
       user: {
@@ -148,6 +157,8 @@ const getCurrentUser = async (req, res, next) => {
         email: user.email,
         role: user.role,
         company_id: user.company_id,
+        company_name,
+        company: user.company_id ? { id: user.company_id, name: company_name } : null,
         created_at: user.createdAt,
         updated_at: user.updatedAt
       }

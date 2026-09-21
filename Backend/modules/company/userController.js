@@ -93,7 +93,15 @@ const createMentor = async (req, res, next) => {
     });
     await user.save();
     res.status(201).json({ success: true, message: 'Mentor created', user: getSafeUser(user) });
-  } catch (error) { next(error); }
+  } catch (error) {
+    // Race-safe global uniqueness: if two requests pass the pre-check
+    // simultaneously, MongoDB's unique email index rejects the second one.
+    // Surface that as 409 (not 500) without touching password behavior.
+    if (error && error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'Email already registered' });
+    }
+    next(error);
+  }
 };
 
 // GET /api/users/mentors - mentors of the ADMIN's own company with intern counts.

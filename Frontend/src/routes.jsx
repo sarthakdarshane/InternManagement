@@ -57,10 +57,9 @@ const RoutesConfig = ({ user }) => {
       <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["SUPERADMIN"]}><UserList /></ProtectedRoute>} />
       
       {/* Admin Routes (old HR pages) */}
-      <Route path="/hr/*" element={<ProtectedRoute allowedRoles={["SUPERADMIN", "ADMIN"]}><HRDashboard /></ProtectedRoute>} />
-      <Route path="/hr/company" element={<ProtectedRoute allowedRoles={["SUPERADMIN", "ADMIN"]}><CompanyForm /></ProtectedRoute>} />
-      <Route path="/hr/internships" element={<ProtectedRoute allowedRoles={["SUPERADMIN", "ADMIN"]}><InternshipList /></ProtectedRoute>} />
-      <Route path="/hr/tasks" element={<ProtectedRoute allowedRoles={["SUPERADMIN", "ADMIN"]}><TaskList /></ProtectedRoute>} />
+      <Route path="/hr/*" element={<ProtectedRoute allowedRoles={["ADMIN"]}><HRDashboard /></ProtectedRoute>} />
+      <Route path="/hr/internships" element={<ProtectedRoute allowedRoles={["ADMIN"]}><InternshipList /></ProtectedRoute>} />
+      <Route path="/hr/internship" element={<ProtectedRoute allowedRoles={["ADMIN"]}><InternshipList /></ProtectedRoute>} />
       
       {/* Mentor Routes */}
       <Route path="/mentor/*" element={<ProtectedRoute allowedRoles={["SUPERADMIN", "ADMIN", "MENTOR"]}><MentorDashboard /></ProtectedRoute>} />
