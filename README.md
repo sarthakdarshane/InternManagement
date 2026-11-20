@@ -1,669 +1,466 @@
-# InternTracker — Internship Management and Performance Evaluation System
+# InternTracker
+### AI-Based Internship Management & Performance Evaluation System
 
-A role-based internship management system built with **React, Vite, Node.js, Express, MongoDB, and Python-based sentiment analysis**. It helps organizations manage internships, daily work updates, mentor evaluations, and monthly performance reports.
+> A centralized platform for managing internships, monitoring intern progress, evaluating performance, and analyzing daily updates.
 
-## Table of Contents
+---
 
-- [Project Overview](#project-overview)
-- [Objectives](#objectives)
-- [Key Features](#key-features)
-- [User Roles](#user-roles)
-- [Technology Stack](#technology-stack)
-- [System Architecture](#system-architecture)
-- [Backend Modules](#backend-modules)
-- [Database Architecture](#database-architecture)
-- [Project Structure](#project-structure)
-- [System Workflow](#system-workflow)
-- [UML and System Diagrams](#uml-and-system-diagrams)
-- [Authentication and Authorization](#authentication-and-authorization)
-- [Sentiment Analysis](#sentiment-analysis)
-- [Performance Evaluation](#performance-evaluation)
-- [Monthly Reports](#monthly-reports)
-- [API Endpoints](#api-endpoints)
-- [Installation](#installation)
-- [Running the Project](#running-the-project)
-- [Environment Variables](#environment-variables)
-- [Testing](#testing)
-- [Security](#security)
-- [Future Enhancements](#future-enhancements)
+## 📌 Project Overview
 
-## Project Overview
+**InternTracker** is a web-based internship management system designed to simplify and improve the process of managing interns within organizations and academic institutions.
 
-InternTracker is designed to manage the internship lifecycle in one centralized platform. It provides separate access for platform administrators, company administrators, mentors, and interns.
+The platform provides a centralized system where administrators can manage internships, Company Mentors can assign tasks and evaluate interns, interns can submit daily progress updates, and Academic Mentors can monitor assigned internships.
 
-The system supports internship management, internship requests and approvals, daily work updates, sentiment analysis, mentor evaluations, and monthly performance reporting.
+The system integrates sentiment analysis to analyze the emotional tone of interns' daily updates and provides periodic reports to support performance monitoring and evaluation.
 
-The main application uses a Node.js and Express REST API connected to MongoDB. A separate Python Flask service processes text for sentiment analysis.
+---
 
-## Objectives
+## 🎯 Problem Statement
 
-- Centralize internship and intern records.
-- Provide secure login and role-based access.
-- Manage companies, internships, mentors, and interns.
+Traditional internship management often relies on spreadsheets, emails, messaging applications, and manual reporting. These methods make it difficult to track intern activities, monitor task progress, maintain records, and evaluate performance efficiently.
+
+InternTracker addresses these problems by providing a centralized, role-based platform for internship management, progress tracking, mentor supervision, and reporting.
+
+---
+
+## 🎯 Objectives
+
+- Centralize internship information and intern records.
+- Simplify internship assignment and management.
+- Track tasks, deadlines, and completion progress.
 - Allow interns to submit daily work updates.
-- Analyze the sentiment of submitted updates.
-- Enable mentors to review intern progress and record evaluations.
-- Generate monthly internship performance summaries.
-- Maintain appropriate company and mentor access boundaries.
+- Enable Company Mentors to monitor and evaluate interns.
+- Enable Academic Mentors to supervise assigned interns.
+- Analyze daily updates using sentiment analysis.
+- Generate weekly and monthly internship reports.
+- Maintain secure access using authentication and role-based authorization.
 
-## Key Features
+---
 
+## ✨ Key Features
+
+### 1. User Authentication and Authorization
+- Secure user registration and login.
 - JWT-based authentication.
-- Role-based dashboards and protected routes.
-- Company and user management.
-- Internship creation, requests, approval, and assignment.
-- Task tracking and independent daily work updates.
-- Mentor dashboard and assigned intern profiles.
-- Daily work history and sentiment results.
-- Mentor performance evaluations.
-- Monthly performance reports.
-- MongoDB data storage.
-- Separate Python sentiment-analysis service.
-- Responsive React frontend.
+- Role-based access control.
+- Protected routes and APIs.
 
-Optional integrations such as Cloudinary file storage and SMTP email notifications should be documented as enabled only when configured in the project.
+### 2. Internship Management
+- Create and manage internship records.
+- Assign interns to internships.
+- Assign Company Mentors.
+- Assign Academic Mentors.
+- Track internship details and status.
 
-## User Roles
+### 3. Task Management
+- Assign tasks to interns.
+- Maintain task details and deadlines.
+- Track task progress.
+- Monitor task completion status.
+
+### 4. Daily Progress Updates
+- Interns submit daily work updates.
+- Record work completed and progress details.
+- Maintain daily activity history.
+- Allow authorized mentors to review updates.
+
+### 5. Sentiment Analysis
+- Analyze the sentiment of interns' daily updates.
+- Use Python Flask and VADER sentiment analysis.
+- Identify positive, negative, or neutral sentiment.
+- Provide additional insight into intern feedback and experiences.
+
+> Sentiment analysis is intended as an indicator of the emotional tone of written updates, not a replacement for professional performance evaluation.
+
+### 6. Mentor Evaluation
+- Company Mentors evaluate interns.
+- Record evaluation scores and feedback.
+- Review intern performance.
+- Maintain evaluation history.
+
+### 7. Academic Mentor Supervision
+- Assign Academic Mentors to specific internships.
+- Allow Academic Mentors to monitor their assigned interns.
+- View internship-related progress and records.
+- Enforce internship-level access restrictions.
+
+### 8. Periodic Reports
+- Generate weekly internship reports.
+- Generate monthly internship reports.
+- Summarize tasks and progress.
+- Include attributable daily updates, evaluations, and sentiment summaries.
+- Export reports in PDF and Excel formats.
+
+### 9. Role-Based Dashboards
+Provide different dashboards based on the user's role, displaying relevant data, activities, and management options.
+
+---
+
+## 👥 User Roles
 
 | Role | Responsibilities |
 |---|---|
-| `SUPERADMIN` | Platform-level administration and authorized cross-company operations. |
-| `ADMIN` | Manages company users, internships, mentor assignments, and reports within the authorized company scope. |
-| `MENTOR` | Reviews assigned interns, daily work updates, progress, sentiment results, and evaluations. |
-| `INTERN` | Views internship information, submits daily work updates, and views personal performance information. |
+| SUPERADMIN | Manage the overall platform and create/manage users, including Academic Mentors. |
+| ADMIN | Manage company-level users and internships, assign interns, mentors, and Academic Mentors. |
+| MENTOR | Assign tasks, monitor progress, review daily updates, and evaluate interns. |
+| ACADEMIC_MENTOR | Supervise specifically assigned internships and monitor assigned interns. |
+| INTERN | View internship details, manage assigned tasks, and submit daily updates. |
 
-## Technology Stack
+### Access Control
 
-| Layer | Technology |
+- Interns can access their own internship information and activities.
+- Company Mentors can access interns and internships assigned to them according to authorization rules.
+- Academic Mentors can access only their explicitly assigned internship scope.
+- Company Admins are restricted to their authorized company data.
+- Protected backend APIs enforce authorization in addition to frontend route protection.
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+
+| Technology | Purpose |
 |---|---|
-| Frontend | React, Vite, JavaScript, CSS |
-| Routing | React Router |
-| API communication | Axios, REST API, JSON |
-| Backend | Node.js, Express.js |
-| Database | MongoDB / MongoDB Atlas |
-| ODM | Mongoose |
-| Authentication | JSON Web Tokens (JWT) |
-| Password security | bcrypt / bcryptjs, as configured |
-| Validation | express-validator, where configured |
-| Sentiment analysis | Python, Flask, VADER-based analysis where configured |
-| Version control | Git and GitHub |
+| React.js | Frontend user interface |
+| Vite | Development server and build tool |
+| JavaScript | Application programming |
+| Axios | API communication |
+| React Router | Client-side routing |
+| CSS | UI styling |
 
-## System Architecture
+### Backend
 
-The application consists of a React frontend, an Express backend, a MongoDB database, and a separate sentiment-analysis service.
+| Technology | Purpose |
+|---|---|
+| Node.js | Backend runtime |
+| Express.js | REST API framework |
+| JavaScript (CommonJS) | Backend development |
+| JWT | Authentication |
+| bcrypt | Password hashing |
+| Mongoose | MongoDB object modeling |
+
+### Database
+
+| Technology | Purpose |
+|---|---|
+| MongoDB | Persistent application database |
+| Mongoose | Schema design and database operations |
+
+### Sentiment Analysis
+
+| Technology | Purpose |
+|---|---|
+| Python | Sentiment service programming |
+| Flask | Sentiment analysis API |
+| VADER | Sentiment analysis library |
+
+### Development Tools
+
+- Visual Studio Code
+- Git
+- GitHub
+- Postman
+- MongoDB Compass
+
+---
+
+## 🏗️ System Architecture
+
+InternTracker follows a frontend-backend architecture with a separate sentiment analysis service.
 
 ```mermaid
-flowchart LR
-    U["Users: Superadmin, Admin, Mentor, Intern"]
-    FE["React + Vite Frontend"]
-    API["Node.js + Express API :5000"]
-    DB[("MongoDB Atlas")]
-    SA["Python Flask Sentiment Service :5004"]
+flowchart TD
+    U[Users: Admin, Mentor, Academic Mentor, Intern]
+    FE[React + Vite Frontend]
+    API[Node.js + Express Backend]
+    DB[(MongoDB Database)]
+    SA[Python Flask Sentiment Service]
+    V[VADER Sentiment Engine]
 
     U --> FE
-    FE -->|"REST API / JSON / JWT"| API
-    API <-->|"Mongoose"| DB
-    API -->|"HTTP sentiment request"| SA
-    SA -->|"Sentiment label and score"| API
-    API -->|"JSON response"| FE
+    FE -->|REST API / JWT| API
+    API --> DB
+    API --> SA
+    SA --> V
+    V --> SA
+    SA --> API
 ```
 
-## Backend Modules
+### Architecture Description
 
-The backend is organized around application features and API route families.
+1. Users interact with the application through the React frontend.
+2. The frontend communicates with the backend through REST APIs.
+3. JWT is used to authenticate API requests.
+4. Express backend services handle business logic and authorization.
+5. MongoDB stores application data.
+6. The sentiment service processes daily updates using VADER.
+7. Results are used in relevant dashboards and reports.
 
-| Module | Route prefix | Purpose |
-|---|---|---|
-| Authentication | `/api/auth` | Registration, login, and current-user information |
-| Companies | `/api/companies` | Company management |
-| Users | `/api/users` | Role-scoped user management |
-| Internships | `/api/internships` | Internship lifecycle and requests |
-| Mentor | `/api/mentor` | Mentor dashboard and assigned intern information |
-| Tasks | `/api/tasks` | Task management |
-| Daily updates | `/api/daily-updates` | Daily work submissions and history |
-| Sentiment | `/api/sentiment` | Sentiment analysis and results |
-| Evaluations | `/api/evaluations` | Mentor evaluations |
-| Reports | `/api/reports` | Performance reports |
+---
 
-Verify the exact routes against the current backend source before treating this table as a definitive API specification.
+## 📂 Project Structure
 
-## Database Architecture
-
-MongoDB is the main application database. Mongoose models may include:
-
-- `User`
-- `Company`
-- `Internship`
-- `Task`
-- `DailyUpdate`
-- `Sentiment`
-- `Evaluation`
-- `Report`
-
-Related documents use application-level references such as user IDs, company IDs, internship IDs, and daily-update IDs. These are MongoDB document relationships rather than SQL foreign keys.
-
-Daily work updates can be submitted independently of a task when allowed by the current application rules.
-
-## Project Structure
-
-The following is an illustrative structure. Adjust it to match the actual folders in your repository.
+> The following is an illustrative structure. Update it to match the exact current folders and filenames in your repository.
 
 ```text
 InternTracker/
-├── Backend/
-│   ├── config/
-│   ├── middleware/
-│   ├── modules/
-│   │   ├── auth/
-│   │   ├── company/
-│   │   ├── internship/
-│   │   ├── mentor/
-│   │   ├── task/
-│   │   ├── dailyUpdate/
-│   │   ├── sentiment/
-│   │   ├── evaluation/
-│   │   └── report/
-│   ├── services/
-│   ├── tests/
-│   ├── server.js
-│   └── package.json
+│
 ├── Frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   ├── context/
 │   │   ├── pages/
 │   │   ├── services/
-│   │   └── routes.jsx
+│   │   ├── routes/
+│   │   └── ...
+│   ├── public/
 │   └── package.json
+│
+├── Backend/
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── user/
+│   │   ├── internship/
+│   │   ├── task/
+│   │   ├── dailyUpdate/
+│   │   ├── evaluation/
+│   │   └── report/
+│   ├── middleware/
+│   ├── config/
+│   ├── tests/
+│   └── package.json
+│
+├── SentimentService/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── ...
+│
 ├── docs/
+│   ├── PROJECT_OVERVIEW.md
+│   ├── SYSTEM_ARCHITECTURE.md
+│   ├── DATABASE_DESIGN.md
+│   ├── API_DOCUMENTATION.md
+│   ├── INSTALLATION.md
+│   └── TESTING.md
+│
+├── .gitignore
 └── README.md
 ```
 
-## System Workflow
+---
+
+## 🔄 Application Workflow
 
 ```mermaid
 flowchart TD
-    A([Start]) --> B["User Login"]
-    B --> C{"Credentials Valid?"}
-    C -- No --> D["Display Error"]
-    D --> B
-    C -- Yes --> E["Open Role-Based Dashboard"]
-    E --> F["Internship Request or Assignment"]
-    F --> G["Internship Approved and Active"]
-    G --> H["Intern Submits Daily Work Update"]
-    H --> I["Save Update in MongoDB"]
-    I --> J["Analyze Sentiment"]
-    J --> K["Save Actual Sentiment Result"]
-    K --> L["Mentor Reviews Intern Progress"]
-    L --> M["Mentor Records Evaluation"]
-    M --> N["Generate Monthly Report"]
-    N --> O([End])
+    A[User Login] --> B{User Role}
+    B --> C[Admin]
+    B --> D[Company Mentor]
+    B --> E[Academic Mentor]
+    B --> F[Intern]
+
+    C --> G[Manage Internships and Users]
+    G --> H[Assign Interns and Mentors]
+
+    D --> I[Assign Tasks]
+    I --> J[Monitor Progress]
+    J --> K[Review Daily Updates]
+    K --> L[Evaluate Intern]
+
+    E --> M[Monitor Assigned Internship]
+    M --> N[Review Assigned Intern Progress]
+
+    F --> O[View Tasks]
+    O --> P[Submit Daily Updates]
+    P --> Q[Sentiment Analysis]
+
+    L --> R[Periodic Reports]
+    Q --> R
+    J --> R
+    R --> S[PDF / Excel Export]
 ```
 
-# UML and System Diagrams
+---
 
-GitHub supports Mermaid diagrams in Markdown code blocks. The diagrams below can be previewed directly in the repository README.
+## 📊 Reporting
 
-## 1. Use Case Diagram
+InternTracker supports periodic internship reporting.
 
-This diagram summarizes the major interactions between user roles and the application.
+### Weekly Reports
+Summarize internship activities and progress for a selected week.
 
-```mermaid
-flowchart LR
-    SA["Superadmin"]
-    AD["Admin"]
-    ME["Mentor"]
-    IN["Intern"]
+### Monthly Reports
+Summarize internship activities and progress for a selected calendar month.
 
-    A(("Manage Platform"))
-    B(("Manage Company Users"))
-    C(("Manage Internships"))
-    D(("Review Assigned Interns"))
-    E(("Review Daily Updates"))
-    F(("Evaluate Intern"))
-    G(("Request Internship"))
-    H(("Submit Daily Update"))
-    I(("View Own Performance"))
-    J(("Generate Reports"))
+### Report Contents
 
-    SA --> A
-    AD --> B
-    AD --> C
-    AD --> J
-    ME --> D
-    ME --> E
-    ME --> F
-    IN --> G
-    IN --> H
-    IN --> I
-```
+- Internship information
+- Reporting period
+- Report generation date
+- Task details and progress
+- Attributable daily updates
+- Mentor evaluations
+- Sentiment summary
 
-## 2. Data Flow Diagram — Level 0
+### Export Formats
 
-This diagram presents InternTracker as a single system and shows its interactions with users, the database, and the sentiment service.
+- PDF
+- Excel (.xlsx)
 
-```mermaid
-flowchart LR
-    A["Superadmin / Admin"]
-    M["Mentor"]
-    I["Intern"]
-    SYS(("InternTracker System"))
-    DB[("MongoDB Atlas")]
-    SA["Sentiment Service"]
+---
 
-    A -->|"Administration and reporting"| SYS
-    M -->|"Reviews and evaluations"| SYS
-    I -->|"Requests and daily updates"| SYS
+## 🔐 Security
 
-    SYS -->|"Administrative views"| A
-    SYS -->|"Intern progress and evaluations"| M
-    SYS -->|"Personal information and reports"| I
+- JWT authentication.
+- Password hashing using bcrypt.
+- Role-based access control.
+- Protected API endpoints.
+- Company-level data isolation.
+- Internship-level authorization for Academic Mentors.
+- Backend authorization checks.
+- Restricted access to personal internship records.
+- Input validation and error handling.
 
-    SYS <--> DB
-    SYS -->|"Update text"| SA
-    SA -->|"Sentiment label and score"| SYS
-```
+---
 
-## 3. Data Flow Diagram — Level 1
-
-This diagram breaks the system into its major processing modules.
-
-```mermaid
-flowchart TB
-    U["Authenticated Users"]
-
-    P1(("1. Authentication and Authorization"))
-    P2(("2. Company and Internship Management"))
-    P3(("3. Daily Work Updates"))
-    P4(("4. Sentiment Analysis"))
-    P5(("5. Mentor Evaluation"))
-    P6(("6. Monthly Reporting"))
-
-    D1[("Users and Companies")]
-    D2[("Internships")]
-    D3[("Tasks and Daily Updates")]
-    D4[("Sentiment Results")]
-    D5[("Evaluations")]
-    D6[("Reports")]
-
-    U --> P1
-    P1 <--> D1
-    P1 --> P2
-    P2 <--> D2
-    P1 --> P3
-    P3 <--> D3
-    P3 --> P4
-    P4 <--> D4
-    P1 --> P5
-    P5 <--> D5
-
-    P2 --> P6
-    P3 --> P6
-    P4 --> P6
-    P5 --> P6
-    P6 <--> D6
-```
-
-## 4. Entity Relationship Diagram
-
-This is a conceptual diagram of MongoDB document relationships. It does not imply that the database uses a relational SQL schema.
-
-```mermaid
-erDiagram
-    COMPANY ||--o{ USER : contains
-    COMPANY ||--o{ INTERNSHIP : owns
-    USER ||--o{ INTERNSHIP : participates_in
-    INTERNSHIP ||--o{ TASK : includes
-    USER ||--o{ TASK : assigned_to
-    USER ||--o{ DAILY_UPDATE : submits
-    TASK o|--o{ DAILY_UPDATE : may_reference
-    DAILY_UPDATE ||--o{ SENTIMENT : has
-    USER ||--o{ EVALUATION : evaluated_in
-    USER ||--o{ EVALUATION : mentor_author
-    INTERNSHIP ||--o{ EVALUATION : relates_to
-    USER ||--o{ REPORT : receives
-    COMPANY ||--o{ REPORT : scopes
-```
-
-Confirm the relationships against the actual Mongoose schemas before using this as a final database design diagram.
-
-## 5. Login Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant UI as React Frontend
-    participant API as Express API
-    participant DB as MongoDB
-
-    User->>UI: Enter email and password
-    UI->>API: POST /api/auth/login
-    API->>DB: Find user account
-    DB-->>API: User record
-    API->>API: Verify password
-
-    alt Valid credentials
-        API-->>UI: JWT and safe user data
-        UI-->>User: Open authorized dashboard
-    else Invalid credentials
-        API-->>UI: Authentication error
-        UI-->>User: Display error message
-    end
-```
-
-## 6. Daily Update and Sentiment Analysis Sequence
-
-```mermaid
-sequenceDiagram
-    actor Intern
-    participant UI as React Frontend
-    participant API as Express Backend
-    participant DB as MongoDB
-    participant SA as Python Sentiment Service
-
-    Intern->>UI: Enter daily work details
-    UI->>API: Submit update with JWT
-    API->>API: Validate access and internship status
-    API->>DB: Save daily update
-    DB-->>API: Saved update ID
-    API->>SA: POST /analyze with update text
-    SA-->>API: Sentiment label and score
-    API->>DB: Save sentiment linked to update
-    API-->>UI: Return update and analysis status
-    UI-->>Intern: Display saved update
-```
-
-If the sentiment service fails, the application should indicate that analysis is unavailable instead of inventing a sentiment result.
-
-## 7. Mentor Evaluation Sequence
-
-```mermaid
-sequenceDiagram
-    actor Mentor
-    participant UI as React Frontend
-    participant API as Express Backend
-    participant DB as MongoDB
-
-    Mentor->>UI: Open assigned intern profile
-    UI->>API: Request intern profile
-    API->>API: Verify mentor assignment
-    API->>DB: Retrieve authorized profile and history
-    DB-->>API: Intern information
-    API-->>UI: Return profile and history
-
-    Mentor->>UI: Submit evaluation scores and comments
-    UI->>API: POST /api/evaluations
-    API->>API: Validate permissions and scores
-    API->>DB: Save evaluation
-    DB-->>API: Saved evaluation
-    API-->>UI: Return success response
-```
-
-## 8. Activity Diagram
-
-```mermaid
-flowchart TD
-    A([Start]) --> B["Login"]
-    B --> C{"Valid Credentials?"}
-    C -- No --> D["Show Error"]
-    D --> B
-    C -- Yes --> E["Role-Based Dashboard"]
-
-    E --> F{"User Role"}
-
-    F -- Intern --> G["View or Request Internship"]
-    G --> H["Submit Daily Work Update"]
-    H --> I["Sentiment Analysis"]
-
-    F -- Mentor --> J["Review Assigned Interns"]
-    J --> K["Review Work and Sentiment"]
-    K --> L["Record Evaluation"]
-
-    F -- Admin --> M["Manage Company and Internships"]
-    M --> N["Generate Monthly Report"]
-
-    I --> O([End])
-    L --> O
-    N --> O
-```
-
-## 9. Deployment Diagram
-
-```mermaid
-flowchart TB
-    B["Browser: Desktop, Tablet, or Mobile"]
-    FE["React + Vite Frontend"]
-    API["Node.js + Express API :5000"]
-    DB[("MongoDB Atlas")]
-    SA["Python Flask Service :5004"]
-    CL["Cloudinary - Optional"]
-    SMTP["SMTP Email Provider - Optional"]
-
-    B --> FE
-    FE -->|"REST API over HTTP/HTTPS"| API
-    API <--> DB
-    API -->|"Sentiment request"| SA
-    API --> CL
-    API --> SMTP
-```
-
-## Authentication and Authorization
-
-- Users authenticate through the login endpoint.
-- The backend issues a JWT after successful authentication.
-- Protected requests use the `Authorization: Bearer <token>` header.
-- Authentication middleware verifies the token and checks the current user state.
-- Role-based authorization restricts access to permitted operations.
-- Company and mentor-assignment boundaries must be enforced by the backend.
-- Sensitive operations should not rely only on frontend route protection.
-
-## Sentiment Analysis
-
-The backend sends daily-update text to a separate Python Flask sentiment-analysis service.
-
-The service returns a sentiment label and score, which the backend can store against the corresponding daily update and intern.
-
-Sentiment results should be displayed as analyzed only when a real result has been successfully obtained and saved.
-
-## Performance Evaluation
-
-Mentors evaluate assigned interns based on the evaluation criteria implemented in the current application. These may include:
-
-- Communication
-- Technical skills
-- Punctuality
-- Task completion
-- Teamwork
-- Written feedback
-- Overall performance score
-
-The permitted score range and final-score calculation should match the actual backend validation and evaluation logic.
-
-## Monthly Reports
-
-Monthly reports can summarize available internship performance information, such as:
-
-- Daily work updates
-- Tasks and completion status
-- Hours reported
-- Sentiment statistics
-- Mentor evaluation scores
-- Overall progress
-
-Report generation and access should be restricted according to the authenticated user's role and company scope.
-
-## API Endpoints
-
-The following is a route-family reference. Confirm the exact methods, request bodies, and access permissions against the current backend source.
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/api/health` | Health check, if configured |
-| POST | `/api/auth/register` | Register an account |
-| POST | `/api/auth/login` | Authenticate a user |
-| GET | `/api/auth/me` | Retrieve current user |
-| GET / POST / PUT / DELETE | `/api/companies` | Company operations |
-| GET | `/api/users` | Retrieve authorized users |
-| GET | `/api/users/mentors` | Retrieve available mentors, if configured |
-| GET / POST / PUT | `/api/internships` | Internship operations |
-| GET | `/api/internships/my-internship` | Retrieve the current intern's internship |
-| GET | `/api/internships/available` | Retrieve available internships, if configured |
-| POST | `/api/internships/:id/request` | Request an internship, if configured |
-| GET | `/api/mentor/dashboard-summary` | Mentor dashboard summary |
-| GET | `/api/mentor/interns` | Retrieve assigned interns |
-| GET | `/api/mentor/interns/:internId` | Retrieve an assigned intern profile |
-| GET / POST / PUT / DELETE | `/api/tasks` | Task operations |
-| GET / POST / PUT / DELETE | `/api/daily-updates` | Daily work update operations |
-| POST | `/api/sentiment/analyze` | Analyze sentiment, if exposed |
-| GET | `/api/sentiment/update/:updateId` | Retrieve sentiment for an update, if configured |
-| POST | `/api/sentiment/analyze-missing` | Analyze updates missing results, if configured |
-| GET / POST / PUT / DELETE | `/api/evaluations` | Evaluation operations |
-| GET | `/api/evaluations/my-evaluations` | Retrieve own evaluations, if configured |
-| GET / POST | `/api/reports` | Report operations |
-| GET | `/api/reports/mentor` | Retrieve mentor reports, if configured |
-| POST | `/api/reports/monthly` | Generate a monthly report, if configured |
-
-## Installation
+## 🚀 Installation and Setup
 
 ### Prerequisites
 
-- Git
+Install the following:
+
 - Node.js and npm
-- Python 3 for the sentiment service
-- MongoDB Atlas or a compatible MongoDB deployment
+- MongoDB Community Server or MongoDB Atlas
+- Python 3
+- Git
+- Visual Studio Code
 
-### Clone the Repository
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/sarthakdarshane/InternManagement.git
-cd InternManagement
+git clone YOUR_GITHUB_REPOSITORY_URL
+cd InternTracker
 ```
 
-Use the repository URL and directory name that match your actual GitHub project.
+Replace `YOUR_GITHUB_REPOSITORY_URL` with your actual GitHub repository URL.
 
-### Install Backend Dependencies
+### 2. Install Frontend Dependencies
 
 ```bash
-cd Backend
+cd Frontend
 npm install
 ```
 
-### Install Frontend Dependencies
-
-```bash
-cd ../Frontend
-npm install
-```
-
-Install the Python service dependencies using the requirements file provided by the project.
-
-## Running the Project
-
-### Start the Backend
-
-```bash
-cd Backend
-npm run dev
-```
-
-The API is expected to use port `5000` when configured with the current default.
-
-### Start the Frontend
+### 3. Install Backend Dependencies
 
 Open another terminal:
 
 ```bash
-cd Frontend
+cd Backend
+npm install
+```
+
+### 4. Configure Environment Variables
+
+Create the required `.env` files according to the backend and frontend configurations.
+
+Do not commit secret keys, database credentials, or production environment files.
+
+Refer to `.env.example` files where available.
+
+### 5. Start MongoDB
+
+Ensure your MongoDB server is running, or configure the connection to MongoDB Atlas.
+
+### 6. Start Backend
+
+From the Backend directory, run the development command defined in its `package.json`.
+
+For example:
+
+```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite. It is commonly `http://localhost:5173`.
+### 7. Start Frontend
 
-### Start the Sentiment Service
-
-Run the Python Flask application using the entry point and dependency instructions in the sentiment service folder. The current configured service port is `5004`.
-
-The exact startup command depends on the files in the repository.
-
-## Environment Variables
-
-Create local environment files from the project's `.env.example` files where available.
-
-Example backend configuration:
-
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>/<database>
-JWT_SECRET=<your-long-random-secret>
-JWT_EXPIRES_IN=1d
-SENTIMENT_SERVICE_URL=http://localhost:5004
-```
-
-Optional email and cloud-storage variables may be required if those integrations are enabled.
-
-Example frontend configuration:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-**Important:** The real `.env` files, MongoDB credentials, JWT secrets, email passwords, and API keys must never be committed to GitHub. Use the actual environment variable names from the project's configuration files.
-
-## Testing
-
-Run the test commands defined by the current project.
-
-Example backend test command, if configured:
+From the Frontend directory:
 
 ```bash
-cd Backend
-node --test
+npm run dev
 ```
 
-Build the frontend, if the corresponding script exists:
+### 8. Start Sentiment Service
 
-```bash
-cd Frontend
-npm run build
-```
+Navigate to the sentiment service directory, install its Python requirements, configure its environment, and start the Flask application using the actual run command defined in the service.
 
-Test important workflows before release:
+> Exact ports, environment variables, and commands should be confirmed from the current project configuration.
 
-- Login and role-based access.
-- Company and internship management.
-- Internship requests and approvals.
-- Daily work update submission.
-- Mentor access to assigned interns only.
-- Sentiment analysis success and failure handling.
-- Evaluation creation and retrieval.
-- Monthly report generation and permissions.
-- Responsive frontend behavior.
+---
 
-Document only tests that have actually been executed.
+## 🧪 Testing
 
-## Security
+Testing includes verification of the following areas:
 
-- Never commit credentials or real environment files.
-- Use password hashing rather than storing plaintext passwords.
-- Validate authorization on the backend.
-- Enforce company and mentor-assignment boundaries.
-- Validate incoming request data.
-- Avoid exposing sensitive user fields in API responses.
-- Do not fabricate sentiment results when the analysis service fails.
-- Review `git status` and the staged diff before committing.
-- Exclude `node_modules`, build outputs, logs, database dumps, and local secrets from version control.
+- Authentication and login
+- Role-based access control
+- Internship creation and assignment
+- Task creation and task progress
+- Daily progress updates
+- Sentiment analysis
+- Mentor evaluation
+- Academic Mentor authorization
+- Weekly and monthly report generation
+- PDF and Excel exports
+- API validation and error handling
 
-## Future Enhancements
+Backend automated tests and frontend production builds are used to verify application functionality.
 
-- PDF and Excel report exports.
-- Email notifications and reminders.
-- Scheduled monthly reporting.
-- Expanded performance analytics.
-- Audit logs and monitoring.
-- Automated deployment and containerization.
-- Additional accessibility and responsive UI testing.
+---
 
-## Project Status
+## 🔮 Future Scope
 
-This README describes the intended architecture and workflows. Before publishing a release, verify the project structure, API routes, environment variables, database models, and startup commands against the current source code.
+Potential future enhancements include:
 
+- In-app notification system
+- Email notifications and reminders
+- Automatic task deadline reminders
+- Improved performance analytics
+- Advanced dashboard charts
+- Additional evaluation criteria
+- Academic Mentor feedback and evaluation workflow
+- Mobile-friendly improvements
+- AI-assisted progress insights
+- Deployment to a cloud platform
+
+> Future scope items are proposed improvements and should not be considered implemented unless verified.
+
+---
+
+## 🎓 Project Information
+
+**Project Name:** InternTracker
+
+**Project Type:** Web-Based Internship Management System
+
+**Project Domain:** Web Development / Artificial Intelligence
+
+**Primary Technologies:** React, Node.js, Express, MongoDB, Python, Flask, VADER
+
+**Purpose:** To simplify internship management, monitor intern progress, support mentor evaluations, and generate internship reports.
+
+---
+
+## 👨‍💻 Contributors
+
+Add the names of your project team members here.
+
+---
+
+## 📄 License
+
+Specify the license applicable to your project repository.
+
+---
+
+*InternTracker — Manage Internships. Monitor Progress. Evaluate Performance.*
