@@ -1,207 +1,900 @@
 # InternTracker
-### AI-Based Internship Management & Performance Evaluation System
+## AI-Based Internship Management & Performance Evaluation System
 
-> A centralized platform for managing internships, monitoring intern progress, evaluating performance, and analyzing daily updates.
+**Manage Internships. Monitor Progress. Evaluate Performance.**
 
----
-
-## 📌 Project Overview
-
-**InternTracker** is a web-based internship management system designed to simplify and improve the process of managing interns within organizations and academic institutions.
-
-The platform provides a centralized system where administrators can manage internships, Company Mentors can assign tasks and evaluate interns, interns can submit daily progress updates, and Academic Mentors can monitor assigned internships.
-
-The system integrates sentiment analysis to analyze the emotional tone of interns' daily updates and provides periodic reports to support performance monitoring and evaluation.
+InternTracker is a web-based internship management platform designed to simplify internship administration, task tracking, mentor supervision, performance evaluation, sentiment analysis, and periodic report generation.
 
 ---
 
-## 🎯 Problem Statement
+# Table of Contents
 
-Traditional internship management often relies on spreadsheets, emails, messaging applications, and manual reporting. These methods make it difficult to track intern activities, monitor task progress, maintain records, and evaluate performance efficiently.
-
-InternTracker addresses these problems by providing a centralized, role-based platform for internship management, progress tracking, mentor supervision, and reporting.
+1. [Introduction](#1-introduction)
+2. [Problem Statement](#2-problem-statement)
+3. [Objectives](#3-objectives)
+4. [Scope](#4-scope)
+5. [User Roles](#5-user-roles)
+6. [Features](#6-features)
+7. [Technology Stack](#7-technology-stack)
+8. [System Architecture Diagram](#8-system-architecture-diagram)
+9. [Use Case Diagram](#9-use-case-diagram)
+10. [DFD Level 0](#10-data-flow-diagram-level-0)
+11. [DFD Level 1](#11-data-flow-diagram-level-1)
+12. [ER Diagram](#12-entity-relationship-diagram)
+13. [Class Diagram](#13-class-diagram)
+14. [Sequence Diagrams](#14-sequence-diagrams)
+15. [Activity Diagram](#15-activity-diagram)
+16. [Deployment Diagram](#16-deployment-diagram)
+17. [Component Diagram](#17-component-diagram)
+18. [Project Structure](#18-project-structure)
+19. [Security](#19-security)
+20. [Reports](#20-reports)
+21. [Installation and Setup](#21-installation-and-setup)
+22. [Testing](#22-testing)
+23. [Future Scope](#23-future-scope)
 
 ---
 
-## 🎯 Objectives
+# 1. Introduction
 
-- Centralize internship information and intern records.
-- Simplify internship assignment and management.
-- Track tasks, deadlines, and completion progress.
+InternTracker is developed to provide a centralized platform for managing internship activities and evaluating intern performance.
+
+The system connects company administrators, Company Mentors, Academic Mentors, and interns through role-based dashboards.
+
+Interns can view assigned tasks and submit daily progress updates. Company Mentors can monitor work, assign tasks, and evaluate interns. Academic Mentors can supervise internships specifically assigned to them.
+
+The platform also integrates sentiment analysis using Python Flask and VADER to analyze the emotional tone of daily updates.
+
+Weekly and monthly reports can be generated and exported into PDF and Excel formats.
+
+# 2. Problem Statement
+
+Traditional internship management often depends on spreadsheets, emails, and manual communication.
+
+This creates difficulties such as:
+
+- Difficulty tracking daily intern activities.
+- Lack of centralized internship records.
+- Manual task assignment and monitoring.
+- Difficulty evaluating intern performance.
+- Limited communication between company and academic mentors.
+- Time-consuming report preparation.
+- Difficulty analyzing intern feedback and progress.
+
+InternTracker aims to solve these problems through an integrated web-based system.
+
+# 3. Objectives
+
+- Develop a centralized internship management platform.
+- Provide secure login and role-based access.
+- Manage internship assignments and records.
+- Enable task assignment and progress tracking.
 - Allow interns to submit daily work updates.
-- Enable Company Mentors to monitor and evaluate interns.
-- Enable Academic Mentors to supervise assigned interns.
-- Analyze daily updates using sentiment analysis.
-- Generate weekly and monthly internship reports.
-- Maintain secure access using authentication and role-based authorization.
+- Analyze update sentiment using VADER.
+- Enable Company Mentor evaluations.
+- Provide Academic Mentor supervision.
+- Generate weekly and monthly reports.
+- Export reports into PDF and Excel formats.
 
----
+# 4. Scope
 
-## ✨ Key Features
+The project covers:
 
-### 1. User Authentication and Authorization
-- Secure user registration and login.
+1. User authentication and authorization.
+2. Company and internship management.
+3. Intern and mentor assignments.
+4. Task management.
+5. Daily progress tracking.
+6. Sentiment analysis.
+7. Mentor performance evaluations.
+8. Academic Mentor supervision.
+9. Periodic report generation.
+10. PDF and Excel exports.
+
+# 5. User Roles
+
+| Role | Description |
+|---|---|
+| SUPERADMIN | Manages platform-level users and administrative operations. |
+| ADMIN | Manages company-level internships, interns, and mentor assignments. |
+| MENTOR | Assigns tasks, monitors interns, and evaluates performance. |
+| ACADEMIC_MENTOR | Supervises explicitly assigned internships and interns. |
+| INTERN | Views assigned tasks and submits daily progress updates. |
+
+# 6. Features
+
+## 6.1 Authentication
+
 - JWT-based authentication.
-- Role-based access control.
-- Protected routes and APIs.
+- Password hashing using bcrypt.
+- Role-based authorization.
+- Protected frontend routes and backend APIs.
 
-### 2. Internship Management
+## 6.2 Internship Management
+
 - Create and manage internship records.
-- Assign interns to internships.
+- Assign interns.
 - Assign Company Mentors.
 - Assign Academic Mentors.
-- Track internship details and status.
+- Monitor internship information.
 
-### 3. Task Management
-- Assign tasks to interns.
-- Maintain task details and deadlines.
+## 6.3 Task Management
+
+- Create and assign tasks.
+- Set task deadlines.
 - Track task progress.
-- Monitor task completion status.
+- Monitor completion status.
 
-### 4. Daily Progress Updates
-- Interns submit daily work updates.
-- Record work completed and progress details.
-- Maintain daily activity history.
+## 6.4 Daily Updates
+
+- Submit daily work updates.
+- Maintain progress history.
 - Allow authorized mentors to review updates.
 
-### 5. Sentiment Analysis
-- Analyze the sentiment of interns' daily updates.
-- Use Python Flask and VADER sentiment analysis.
-- Identify positive, negative, or neutral sentiment.
-- Provide additional insight into intern feedback and experiences.
+## 6.5 Sentiment Analysis
 
-> Sentiment analysis is intended as an indicator of the emotional tone of written updates, not a replacement for professional performance evaluation.
+- Python Flask-based sentiment service.
+- VADER sentiment analysis.
+- Positive, negative, and neutral classifications.
+- Sentiment summaries in relevant reports.
 
-### 6. Mentor Evaluation
-- Company Mentors evaluate interns.
-- Record evaluation scores and feedback.
-- Review intern performance.
-- Maintain evaluation history.
+Sentiment is an additional indicator and should not be treated as a direct replacement for performance evaluation.
 
-### 7. Academic Mentor Supervision
-- Assign Academic Mentors to specific internships.
-- Allow Academic Mentors to monitor their assigned interns.
-- View internship-related progress and records.
-- Enforce internship-level access restrictions.
+## 6.6 Performance Evaluation
 
-### 8. Periodic Reports
-- Generate weekly internship reports.
-- Generate monthly internship reports.
-- Summarize tasks and progress.
-- Include attributable daily updates, evaluations, and sentiment summaries.
-- Export reports in PDF and Excel formats.
+- Company Mentor evaluation.
+- Evaluation scores and feedback.
+- Performance history.
 
-### 9. Role-Based Dashboards
-Provide different dashboards based on the user's role, displaying relevant data, activities, and management options.
+## 6.7 Academic Mentor Supervision
+
+- Assign Academic Mentors to internships.
+- View explicitly assigned interns.
+- Monitor authorized internship progress.
+- Enforce internship-level data restrictions.
+
+## 6.8 Periodic Reports
+
+- Weekly reports.
+- Monthly reports.
+- Task progress summaries.
+- Daily update summaries.
+- Mentor evaluations.
+- Sentiment summaries.
+- PDF and Excel exports.
+
+# 7. Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React.js, Vite, JavaScript |
+| Backend | Node.js, Express.js |
+| Database | MongoDB |
+| ODM | Mongoose |
+| Authentication | JWT |
+| Password Security | bcrypt |
+| Sentiment Service | Python, Flask |
+| Sentiment Library | VADER |
+| API Communication | Axios, REST API |
+| Development | VS Code, Git, GitHub, Postman |
 
 ---
 
-## 👥 User Roles
+# 8. System Architecture Diagram
 
-| Role | Responsibilities |
-|---|---|
-| SUPERADMIN | Manage the overall platform and create/manage users, including Academic Mentors. |
-| ADMIN | Manage company-level users and internships, assign interns, mentors, and Academic Mentors. |
-| MENTOR | Assign tasks, monitor progress, review daily updates, and evaluate interns. |
-| ACADEMIC_MENTOR | Supervise specifically assigned internships and monitor assigned interns. |
-| INTERN | View internship details, manage assigned tasks, and submit daily updates. |
-
-### Access Control
-
-- Interns can access their own internship information and activities.
-- Company Mentors can access interns and internships assigned to them according to authorization rules.
-- Academic Mentors can access only their explicitly assigned internship scope.
-- Company Admins are restricted to their authorized company data.
-- Protected backend APIs enforce authorization in addition to frontend route protection.
-
----
-
-## 🛠️ Technology Stack
-
-### Frontend
-
-| Technology | Purpose |
-|---|---|
-| React.js | Frontend user interface |
-| Vite | Development server and build tool |
-| JavaScript | Application programming |
-| Axios | API communication |
-| React Router | Client-side routing |
-| CSS | UI styling |
-
-### Backend
-
-| Technology | Purpose |
-|---|---|
-| Node.js | Backend runtime |
-| Express.js | REST API framework |
-| JavaScript (CommonJS) | Backend development |
-| JWT | Authentication |
-| bcrypt | Password hashing |
-| Mongoose | MongoDB object modeling |
-
-### Database
-
-| Technology | Purpose |
-|---|---|
-| MongoDB | Persistent application database |
-| Mongoose | Schema design and database operations |
-
-### Sentiment Analysis
-
-| Technology | Purpose |
-|---|---|
-| Python | Sentiment service programming |
-| Flask | Sentiment analysis API |
-| VADER | Sentiment analysis library |
-
-### Development Tools
-
-- Visual Studio Code
-- Git
-- GitHub
-- Postman
-- MongoDB Compass
-
----
-
-## 🏗️ System Architecture
-
-InternTracker follows a frontend-backend architecture with a separate sentiment analysis service.
+This diagram shows how the frontend, backend, database, and sentiment service communicate.
 
 ```mermaid
 flowchart TD
-    U[Users: Admin, Mentor, Academic Mentor, Intern]
-    FE[React + Vite Frontend]
-    API[Node.js + Express Backend]
-    DB[(MongoDB Database)]
-    SA[Python Flask Sentiment Service]
-    V[VADER Sentiment Engine]
+    U["Users<br/>SUPERADMIN / ADMIN<br/>MENTOR / ACADEMIC_MENTOR / INTERN"]
+
+    FE["Frontend<br/>React + Vite"]
+    API["Backend<br/>Node.js + Express"]
+    AUTH["Authentication<br/>JWT + bcrypt"]
+
+    USER["User Module"]
+    INT["Internship Module"]
+    TASK["Task Module"]
+    UPDATE["Daily Update Module"]
+    EVAL["Evaluation Module"]
+    REPORT["Report Module"]
+
+    DB[("MongoDB Database")]
+    FLASK["Python Flask<br/>Sentiment Service"]
+    VADER["VADER<br/>Sentiment Engine"]
 
     U --> FE
-    FE -->|REST API / JWT| API
-    API --> DB
-    API --> SA
-    SA --> V
-    V --> SA
-    SA --> API
+    FE -->|"REST API Requests"| API
+    API --> AUTH
+
+    API --> USER
+    API --> INT
+    API --> TASK
+    API --> UPDATE
+    API --> EVAL
+    API --> REPORT
+
+    USER --> DB
+    INT --> DB
+    TASK --> DB
+    UPDATE --> DB
+    EVAL --> DB
+    REPORT --> DB
+
+    UPDATE -->|"Update Text"| FLASK
+    FLASK --> VADER
+    VADER --> FLASK
+    FLASK -->|"Sentiment Result"| UPDATE
 ```
 
-### Architecture Description
+### Architecture Explanation
 
-1. Users interact with the application through the React frontend.
-2. The frontend communicates with the backend through REST APIs.
-3. JWT is used to authenticate API requests.
-4. Express backend services handle business logic and authorization.
-5. MongoDB stores application data.
-6. The sentiment service processes daily updates using VADER.
-7. Results are used in relevant dashboards and reports.
+1. Users access the application through React.
+2. React communicates with Express using REST APIs.
+3. JWT authentication verifies the user.
+4. Backend modules handle application operations.
+5. MongoDB stores persistent application data.
+6. Daily update text is processed by the Flask sentiment service.
+7. VADER returns sentiment results.
+8. The reporting module prepares periodic reports.
 
 ---
 
-## 📂 Project Structure
+# 9. Use Case Diagram
 
-> The following is an illustrative structure. Update it to match the exact current folders and filenames in your repository.
+This diagram represents the interactions between the five user roles and the system.
+
+```mermaid
+flowchart LR
+    SA["SUPERADMIN"]
+    AD["ADMIN"]
+    CM["COMPANY MENTOR"]
+    AM["ACADEMIC MENTOR"]
+    IN["INTERN"]
+
+    subgraph SYSTEM["InternTracker System"]
+        UC1(["Login"])
+        UC2(["Manage Users"])
+        UC3(["Manage Internships"])
+        UC4(["Assign Interns"])
+        UC5(["Assign Company Mentor"])
+        UC6(["Assign Academic Mentor"])
+        UC7(["Assign Tasks"])
+        UC8(["Submit Daily Updates"])
+        UC9(["View Tasks"])
+        UC10(["Review Progress"])
+        UC11(["Perform Evaluation"])
+        UC12(["Monitor Assigned Interns"])
+        UC13(["Generate Reports"])
+        UC14(["Export PDF / Excel"])
+        UC15(["View Sentiment Results"])
+    end
+
+    SA --> UC1
+    SA --> UC2
+
+    AD --> UC1
+    AD --> UC3
+    AD --> UC4
+    AD --> UC5
+    AD --> UC6
+
+    CM --> UC1
+    CM --> UC7
+    CM --> UC10
+    CM --> UC11
+    CM --> UC13
+    CM --> UC15
+
+    AM --> UC1
+    AM --> UC12
+    AM --> UC10
+    AM --> UC13
+
+    IN --> UC1
+    IN --> UC8
+    IN --> UC9
+
+    UC13 --> UC14
+```
+
+### Use Case Explanation
+
+- SUPERADMIN manages platform users.
+- ADMIN manages company-level internships and assignments.
+- Company Mentors manage tasks, monitor progress, and evaluate interns.
+- Academic Mentors supervise assigned internship records.
+- Interns view their tasks and submit daily updates.
+- Authorized users generate and export reports according to their permissions.
+
+---
+
+# 10. Data Flow Diagram Level 0
+
+DFD Level 0 represents the complete system as one process.
+
+```mermaid
+flowchart LR
+    SA["SUPERADMIN"]
+    AD["ADMIN"]
+    CM["COMPANY MENTOR"]
+    AM["ACADEMIC MENTOR"]
+    IN["INTERN"]
+
+    SYS(("0<br/>InternTracker<br/>System"))
+
+    DB[("MongoDB")]
+
+    SA -->|"User management data"| SYS
+    SYS -->|"User information"| SA
+
+    AD -->|"Internship and assignment data"| SYS
+    SYS -->|"Internship information"| AD
+
+    CM -->|"Tasks and evaluations"| SYS
+    SYS -->|"Intern progress and reports"| CM
+
+    AM -->|"Supervision requests"| SYS
+    SYS -->|"Assigned internship information"| AM
+
+    IN -->|"Daily updates and task progress"| SYS
+    SYS -->|"Assigned tasks and status"| IN
+
+    SYS <-->|"Store and retrieve data"| DB
+```
+
+### DFD Level 0 Explanation
+
+The InternTracker system receives information from different users, processes their requests, and stores or retrieves information from MongoDB.
+
+Each user receives information based on their role and authorization.
+
+---
+
+# 11. Data Flow Diagram Level 1
+
+DFD Level 1 breaks the main system into smaller processes.
+
+```mermaid
+flowchart TD
+    USERS["System Users"]
+
+    P1(("1.0<br/>Authentication"))
+    P2(("2.0<br/>Internship Management"))
+    P3(("3.0<br/>Task Management"))
+    P4(("4.0<br/>Daily Updates"))
+    P5(("5.0<br/>Sentiment Analysis"))
+    P6(("6.0<br/>Performance Evaluation"))
+    P7(("7.0<br/>Report Generation"))
+
+    D1[("D1: Users")]
+    D2[("D2: Internships")]
+    D3[("D3: Tasks")]
+    D4[("D4: Daily Updates")]
+    D5[("D5: Sentiment Results")]
+    D6[("D6: Evaluations")]
+    D7[("D7: Reports")]
+
+    SENT["Python Flask + VADER"]
+    OUTPUT["PDF / Excel Reports"]
+
+    USERS --> P1
+    P1 <--> D1
+
+    USERS --> P2
+    P2 <--> D2
+    P2 <--> D1
+
+    USERS --> P3
+    P3 <--> D3
+    P3 <--> D2
+
+    USERS --> P4
+    P4 <--> D4
+    P4 --> P5
+
+    P5 <--> SENT
+    P5 --> D5
+
+    USERS --> P6
+    P6 <--> D6
+    P6 <--> D3
+
+    P7 --> D7
+    P7 --> OUTPUT
+
+    D2 --> P7
+    D3 --> P7
+    D4 --> P7
+    D5 --> P7
+    D6 --> P7
+```
+
+### DFD Level 1 Explanation
+
+The system contains seven major processes:
+
+1. Authentication verifies users.
+2. Internship Management handles internship records and assignments.
+3. Task Management handles task creation and progress.
+4. Daily Updates stores intern work updates.
+5. Sentiment Analysis processes update text.
+6. Performance Evaluation stores mentor assessments.
+7. Report Generation creates weekly and monthly reports.
+
+The actual report contents depend on available and authorized records.
+
+---
+
+# 12. Entity Relationship Diagram
+
+The following is a conceptual ER diagram. Confirm the exact fields, collection names, and relationships against the current Mongoose schemas before treating it as the final database specification.
+
+```mermaid
+erDiagram
+    USER {
+        ObjectId _id PK
+        string name
+        string email
+        string password
+        string role
+    }
+
+    INTERNSHIP {
+        ObjectId _id PK
+        ObjectId intern_id FK
+        ObjectId company_mentor_id FK
+        ObjectId academic_mentor_id FK
+        string title
+        string status
+    }
+
+    TASK {
+        ObjectId _id PK
+        ObjectId internship_id FK
+        ObjectId intern_id FK
+        string title
+        string status
+        number progress
+        date deadline
+    }
+
+    DAILY_UPDATE {
+        ObjectId _id PK
+        ObjectId intern_id FK
+        ObjectId task_id FK
+        string description
+        date created_at
+    }
+
+    SENTIMENT {
+        ObjectId _id PK
+        ObjectId daily_update_id FK
+        string sentiment
+        number score
+    }
+
+    EVALUATION {
+        ObjectId _id PK
+        ObjectId internship_id FK
+        ObjectId intern_id FK
+        ObjectId mentor_id FK
+        number final_score
+        string feedback
+    }
+
+    REPORT {
+        ObjectId _id PK
+        ObjectId internship_id FK
+        string period_type
+        date start_date
+        date end_date
+        date generated_at
+    }
+
+    USER ||--o{ INTERNSHIP : "intern"
+    USER ||--o{ INTERNSHIP : "company mentor"
+    USER ||--o{ INTERNSHIP : "academic mentor"
+
+    INTERNSHIP ||--o{ TASK : contains
+    USER ||--o{ TASK : assigned_to
+
+    USER ||--o{ DAILY_UPDATE : submits
+    TASK o|--o{ DAILY_UPDATE : linked_to
+
+    DAILY_UPDATE ||--o| SENTIMENT : analyzed_as
+
+    INTERNSHIP ||--o{ EVALUATION : has
+    USER ||--o{ EVALUATION : receives
+    USER ||--o{ EVALUATION : performs
+
+    INTERNSHIP ||--o{ REPORT : generates
+```
+
+### ER Diagram Explanation
+
+- A user can participate in different internship-related roles.
+- An internship can have an intern, Company Mentor, and Academic Mentor association.
+- An internship can contain multiple tasks.
+- Interns submit daily updates.
+- Daily updates may be associated with tasks.
+- Daily updates can have sentiment analysis results.
+- Evaluations are associated with internship and user records.
+- Reports are generated for internship reporting periods.
+
+**Important:** The diagram describes conceptual relationships, not a guarantee that every reference is physically stored in exactly this way. Check your schemas before final submission.
+
+---
+
+# 13. Class Diagram
+
+This diagram represents the main conceptual classes and their responsibilities.
+
+```mermaid
+classDiagram
+    class User {
+        +ObjectId id
+        +String name
+        +String email
+        +String password
+        +String role
+        +login()
+        +logout()
+    }
+
+    class Internship {
+        +ObjectId id
+        +String title
+        +ObjectId internId
+        +ObjectId companyMentorId
+        +ObjectId academicMentorId
+        +String status
+        +assignIntern()
+        +assignMentor()
+    }
+
+    class Task {
+        +ObjectId id
+        +String title
+        +Date deadline
+        +Number progress
+        +String status
+        +updateProgress()
+        +completeTask()
+    }
+
+    class DailyUpdate {
+        +ObjectId id
+        +String description
+        +Date createdAt
+        +submitUpdate()
+    }
+
+    class SentimentAnalysis {
+        +String sentiment
+        +Number score
+        +analyzeText()
+    }
+
+    class Evaluation {
+        +ObjectId id
+        +Number finalScore
+        +String feedback
+        +evaluateIntern()
+    }
+
+    class Report {
+        +ObjectId id
+        +String periodType
+        +Date startDate
+        +Date endDate
+        +generateReport()
+        +exportPDF()
+        +exportExcel()
+    }
+
+    User "1" --> "0..*" Internship : participates in
+    Internship "1" --> "0..*" Task : contains
+    User "1" --> "0..*" Task : assigned to
+    User "1" --> "0..*" DailyUpdate : submits
+    Task "0..1" --> "0..*" DailyUpdate : linked to
+    DailyUpdate --> SentimentAnalysis : analyzed by
+    Internship "1" --> "0..*" Evaluation : has
+    Internship "1" --> "0..*" Report : has
+```
+
+### Class Diagram Explanation
+
+The diagram illustrates the major objects and their relationships.
+
+- User represents all application roles.
+- Internship represents an internship record.
+- Task represents assigned work.
+- DailyUpdate represents submitted progress.
+- SentimentAnalysis processes daily update text.
+- Evaluation represents mentor assessment.
+- Report represents generated periodic reports.
+
+---
+
+# 14. Sequence Diagrams
+
+## 14.1 Login Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as React Frontend
+    participant API as Express Backend
+    participant Auth as Authentication Module
+    participant DB as MongoDB
+
+    User->>UI: Enter email and password
+    UI->>API: POST /api/auth/login
+    API->>Auth: Validate login request
+    Auth->>DB: Find user by email
+    DB-->>Auth: User information
+    Auth->>Auth: Compare password using bcrypt
+    Auth->>Auth: Generate JWT
+    Auth-->>API: Authentication result
+    API-->>UI: Token and user information
+    UI-->>User: Open role-based dashboard
+```
+
+## 14.2 Task Assignment Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor Mentor
+    participant UI as React Frontend
+    participant API as Express Backend
+    participant Task as Task Module
+    participant DB as MongoDB
+    actor Intern
+
+    Mentor->>UI: Create task
+    UI->>API: Submit task details
+    API->>Task: Validate mentor authorization
+    Task->>DB: Save task
+    DB-->>Task: Task saved
+    Task-->>API: Task creation result
+    API-->>UI: Success response
+    UI-->>Mentor: Display created task
+
+    Intern->>UI: Open task dashboard
+    UI->>API: Request assigned tasks
+    API->>Task: Verify intern access
+    Task->>DB: Retrieve assigned tasks
+    DB-->>Task: Task records
+    Task-->>API: Task information
+    API-->>UI: Task response
+    UI-->>Intern: Display assigned tasks
+```
+
+## 14.3 Daily Update and Sentiment Analysis Sequence
+
+```mermaid
+sequenceDiagram
+    actor Intern
+    participant UI as React Frontend
+    participant API as Express Backend
+    participant DU as Daily Update Module
+    participant DB as MongoDB
+    participant Flask as Python Flask
+    participant VADER as VADER Engine
+
+    Intern->>UI: Submit daily update
+    UI->>API: Send update
+    API->>DU: Validate intern and task access
+    DU->>DB: Store daily update
+    DB-->>DU: Saved update
+
+    DU->>Flask: Send update text
+    Flask->>VADER: Analyze sentiment
+    VADER-->>Flask: Sentiment classification and score
+    Flask-->>DU: Sentiment result
+    DU->>DB: Store sentiment result
+    DU-->>API: Update result
+    API-->>UI: Success response
+    UI-->>Intern: Display submission status
+```
+
+## 14.4 Report Generation Sequence
+
+```mermaid
+sequenceDiagram
+    actor Mentor
+    participant UI as React Frontend
+    participant API as Express Backend
+    participant Report as Report Module
+    participant DB as MongoDB
+    participant Export as PDF / Excel Export
+
+    Mentor->>UI: Select internship and reporting period
+    UI->>API: Request report generation
+    API->>Report: Validate role and internship access
+    Report->>DB: Retrieve authorized records
+    DB-->>Report: Tasks, updates, evaluations, sentiment
+    Report->>Report: Calculate report summaries
+    Report->>DB: Save report snapshot
+    DB-->>Report: Report ID
+    Report-->>API: Generated report
+    API-->>UI: Report details
+
+    Mentor->>UI: Select PDF or Excel export
+    UI->>API: Request export
+    API->>Report: Verify report access
+    Report->>Export: Generate requested file
+    Export-->>API: Export file
+    API-->>UI: File response
+    UI-->>Mentor: Download report
+```
+
+---
+
+# 15. Activity Diagram
+
+This activity diagram describes the general internship workflow.
+
+```mermaid
+flowchart TD
+    A([Start]) --> B[User Login]
+    B --> C{Authentication Valid?}
+
+    C -->|No| D[Show Login Error]
+    D --> B
+
+    C -->|Yes| E{Identify User Role}
+
+    E -->|ADMIN| F[Manage Internship]
+    F --> G[Assign Intern and Mentors]
+
+    E -->|COMPANY MENTOR| H[Assign Tasks]
+    H --> I[Monitor Intern Progress]
+    I --> J[Review Daily Updates]
+    J --> K[Evaluate Intern]
+
+    E -->|ACADEMIC MENTOR| L[Open Assigned Internship]
+    L --> M[Monitor Assigned Interns]
+
+    E -->|INTERN| N[View Assigned Tasks]
+    N --> O[Complete Work]
+    O --> P[Submit Daily Update]
+    P --> Q[Sentiment Analysis]
+
+    K --> R[Generate Periodic Report]
+    Q --> R
+    M --> R
+    R --> S[Export PDF / Excel]
+
+    G --> T([End])
+    S --> T
+```
+
+### Activity Diagram Explanation
+
+The workflow begins with user authentication.
+
+After successful login, the system displays functionality based on the user's role.
+
+Interns submit updates, mentors monitor and evaluate progress, Academic Mentors supervise assigned internships, and authorized users generate reports.
+
+---
+
+# 16. Deployment Diagram
+
+The deployment diagram shows the expected application execution environment.
+
+```mermaid
+flowchart TB
+    subgraph CLIENT["Client Machine"]
+        BROWSER["Web Browser"]
+        REACT["React + Vite Frontend"]
+        BROWSER --> REACT
+    end
+
+    subgraph APPLICATION["Application Server"]
+        EXPRESS["Node.js + Express Backend"]
+        AUTH["JWT Authentication"]
+        MODULES["Backend Modules"]
+        EXPRESS --> AUTH
+        EXPRESS --> MODULES
+    end
+
+    subgraph DATABASE["Database Server"]
+        MONGO[("MongoDB Database")]
+    end
+
+    subgraph SENTIMENT["Sentiment Service"]
+        FLASK["Python Flask API"]
+        VADER["VADER Library"]
+        FLASK --> VADER
+    end
+
+    REACT <-->|"HTTPS / REST API"| EXPRESS
+    MODULES <-->|"Mongoose Database Connection"| MONGO
+    MODULES <-->|"HTTP API"| FLASK
+```
+
+### Deployment Explanation
+
+- Client machine runs the web browser and React application.
+- Application server runs Node.js and Express.
+- MongoDB stores persistent records.
+- Python Flask runs the sentiment analysis service.
+- Backend communicates with MongoDB and Flask.
+
+The exact deployment environment may be a local development machine or a configured cloud/server environment.
+
+---
+
+# 17. Component Diagram
+
+The component diagram represents the major software modules and their communication.
+
+```mermaid
+flowchart TD
+    USER["Application Users"]
+
+    subgraph FRONTEND["Frontend Components"]
+        LOGIN["Login / Authentication UI"]
+        DASH["Role-Based Dashboards"]
+        TASKUI["Task Management UI"]
+        UPDATEUI["Daily Update UI"]
+        EVALUI["Evaluation UI"]
+        REPORTUI["Report UI"]
+    end
+
+    subgraph BACKEND["Express Backend"]
+        AUTH["Auth Module"]
+        USERMOD["User Module"]
+        INTMOD["Internship Module"]
+        TASKMOD["Task Module"]
+        UPDATEMOD["Daily Update Module"]
+        EVALMOD["Evaluation Module"]
+        REPORTMOD["Report Module"]
+    end
+
+    DB[("MongoDB")]
+    SENT["Python Flask Sentiment Service"]
+    VADER["VADER"]
+
+    USER --> LOGIN
+    USER --> DASH
+
+    LOGIN --> AUTH
+    DASH --> USERMOD
+    DASH --> INTMOD
+    TASKUI --> TASKMOD
+    UPDATEUI --> UPDATEMOD
+    EVALUI --> EVALMOD
+    REPORTUI --> REPORTMOD
+
+    AUTH --> DB
+    USERMOD --> DB
+    INTMOD --> DB
+    TASKMOD --> DB
+    UPDATEMOD --> DB
+    EVALMOD --> DB
+    REPORTMOD --> DB
+
+    UPDATEMOD --> SENT
+    SENT --> VADER
+```
+
+### Component Explanation
+
+The frontend provides user interfaces for different roles.
+
+The backend contains modules for authentication, users, internships, tasks, daily updates, evaluations, and reports.
+
+MongoDB provides persistent storage. The separate Flask service performs sentiment analysis through VADER.
+
+---
+
+# 18. Project Structure
+
+The following is a representative structure. Verify the exact folder names and files in the current repository.
 
 ```text
 InternTracker/
@@ -210,6 +903,10 @@ InternTracker/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
+│   │   │   ├── admin/
+│   │   │   ├── mentor/
+│   │   │   ├── intern/
+│   │   │   └── academicMentor/
 │   │   ├── services/
 │   │   ├── routes/
 │   │   └── ...
@@ -236,231 +933,177 @@ InternTracker/
 │   └── ...
 │
 ├── docs/
-│   ├── PROJECT_OVERVIEW.md
-│   ├── SYSTEM_ARCHITECTURE.md
-│   ├── DATABASE_DESIGN.md
-│   ├── API_DOCUMENTATION.md
-│   ├── INSTALLATION.md
-│   └── TESTING.md
 │
 ├── .gitignore
 └── README.md
 ```
 
----
+# 19. Security
 
-## 🔄 Application Workflow
+The system uses security mechanisms to protect application information.
 
-```mermaid
-flowchart TD
-    A[User Login] --> B{User Role}
-    B --> C[Admin]
-    B --> D[Company Mentor]
-    B --> E[Academic Mentor]
-    B --> F[Intern]
+- JWT authentication.
+- bcrypt password hashing.
+- Role-based authorization.
+- Protected API endpoints.
+- Backend-side permission validation.
+- Company-level access restrictions.
+- Internship-level Academic Mentor restrictions.
+- Validation of incoming requests.
+- Restricted access to user-specific records.
 
-    C --> G[Manage Internships and Users]
-    G --> H[Assign Interns and Mentors]
+# 20. Reports
 
-    D --> I[Assign Tasks]
-    I --> J[Monitor Progress]
-    J --> K[Review Daily Updates]
-    K --> L[Evaluate Intern]
-
-    E --> M[Monitor Assigned Internship]
-    M --> N[Review Assigned Intern Progress]
-
-    F --> O[View Tasks]
-    O --> P[Submit Daily Updates]
-    P --> Q[Sentiment Analysis]
-
-    L --> R[Periodic Reports]
-    Q --> R
-    J --> R
-    R --> S[PDF / Excel Export]
-```
-
----
-
-## 📊 Reporting
-
-InternTracker supports periodic internship reporting.
+InternTracker supports periodic reporting.
 
 ### Weekly Reports
-Summarize internship activities and progress for a selected week.
+
+Reports generated for a selected weekly period.
 
 ### Monthly Reports
-Summarize internship activities and progress for a selected calendar month.
 
-### Report Contents
+Reports generated for a selected calendar month.
 
-- Internship information
-- Reporting period
-- Report generation date
-- Task details and progress
-- Attributable daily updates
-- Mentor evaluations
-- Sentiment summary
+### Report Information
+
+- Internship details.
+- Reporting period.
+- Generation date.
+- Task details and progress.
+- Attributable daily updates.
+- Company Mentor evaluations.
+- Sentiment summary.
 
 ### Export Formats
 
 - PDF
 - Excel (.xlsx)
 
----
+Reports use saved snapshots so the displayed report and its exported versions refer to the same generated data.
 
-## 🔐 Security
+# 21. Installation and Setup
 
-- JWT authentication.
-- Password hashing using bcrypt.
-- Role-based access control.
-- Protected API endpoints.
-- Company-level data isolation.
-- Internship-level authorization for Academic Mentors.
-- Backend authorization checks.
-- Restricted access to personal internship records.
-- Input validation and error handling.
+## Prerequisites
 
----
+Install:
 
-## 🚀 Installation and Setup
-
-### Prerequisites
-
-Install the following:
-
-- Node.js and npm
+- Node.js
+- npm
 - MongoDB Community Server or MongoDB Atlas
 - Python 3
 - Git
 - Visual Studio Code
 
-### 1. Clone the Repository
+## Clone Repository
 
 ```bash
 git clone YOUR_GITHUB_REPOSITORY_URL
 cd InternTracker
 ```
 
-Replace `YOUR_GITHUB_REPOSITORY_URL` with your actual GitHub repository URL.
-
-### 2. Install Frontend Dependencies
+## Install Frontend
 
 ```bash
 cd Frontend
 npm install
+npm run dev
 ```
 
-### 3. Install Backend Dependencies
+## Install Backend
 
 Open another terminal:
 
 ```bash
 cd Backend
 npm install
-```
-
-### 4. Configure Environment Variables
-
-Create the required `.env` files according to the backend and frontend configurations.
-
-Do not commit secret keys, database credentials, or production environment files.
-
-Refer to `.env.example` files where available.
-
-### 5. Start MongoDB
-
-Ensure your MongoDB server is running, or configure the connection to MongoDB Atlas.
-
-### 6. Start Backend
-
-From the Backend directory, run the development command defined in its `package.json`.
-
-For example:
-
-```bash
 npm run dev
 ```
 
-### 7. Start Frontend
+## Configure MongoDB
 
-From the Frontend directory:
+Ensure MongoDB is running and configure the database connection using the project's environment variables.
+
+## Install Sentiment Service
+
+Navigate to the actual sentiment service directory.
 
 ```bash
-npm run dev
+pip install -r requirements.txt
 ```
 
-### 8. Start Sentiment Service
+Start the Flask service using its configured run command.
 
-Navigate to the sentiment service directory, install its Python requirements, configure its environment, and start the Flask application using the actual run command defined in the service.
+## Environment Variables
 
-> Exact ports, environment variables, and commands should be confirmed from the current project configuration.
+Create environment files based on the actual project configuration.
+
+Typical settings may include:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret_key
+```
+
+These are illustrative names. Use the exact environment variable names expected by your source code.
+
+Never commit real credentials or secret keys.
+
+# 22. Testing
+
+The following areas should be tested:
+
+| Module | Testing Focus |
+|---|---|
+| Authentication | Registration, login, JWT validation |
+| Users | User creation and role permissions |
+| Internship | Creation and mentor assignments |
+| Tasks | Assignment, progress, completion |
+| Daily Updates | Submission and data access |
+| Sentiment | Sentiment classification |
+| Evaluation | Scores and feedback |
+| Academic Mentor | Assigned-intern restrictions |
+| Reports | Weekly/monthly generation |
+| Export | PDF and Excel generation |
+
+Run the backend tests using the test command configured in `Backend/package.json`.
+
+Build the frontend using the build command configured in `Frontend/package.json`.
+
+Record actual test results before final submission.
+
+# 23. Future Scope
+
+Potential improvements include:
+
+- In-app notifications.
+- Email alerts and deadline reminders.
+- Automated overdue task reminders.
+- Academic Mentor feedback and evaluation workflow.
+- More advanced performance analytics.
+- Additional dashboard visualizations.
+- Cloud deployment.
+- Mobile application.
+- AI-assisted progress insights.
+
+These are proposed improvements and are not necessarily implemented features.
 
 ---
 
-## 🧪 Testing
+# Conclusion
 
-Testing includes verification of the following areas:
+InternTracker provides a centralized solution for managing internships and monitoring intern performance.
 
-- Authentication and login
-- Role-based access control
-- Internship creation and assignment
-- Task creation and task progress
-- Daily progress updates
-- Sentiment analysis
-- Mentor evaluation
-- Academic Mentor authorization
-- Weekly and monthly report generation
-- PDF and Excel exports
-- API validation and error handling
+It integrates internship management, task tracking, daily updates, sentiment analysis, mentor evaluation, Academic Mentor supervision, and periodic report generation.
 
-Backend automated tests and frontend production builds are used to verify application functionality.
+The platform aims to improve transparency, simplify internship administration, and support data-driven performance monitoring.
 
 ---
 
-## 🔮 Future Scope
+**Project:** InternTracker
 
-Potential future enhancements include:
-
-- In-app notification system
-- Email notifications and reminders
-- Automatic task deadline reminders
-- Improved performance analytics
-- Advanced dashboard charts
-- Additional evaluation criteria
-- Academic Mentor feedback and evaluation workflow
-- Mobile-friendly improvements
-- AI-assisted progress insights
-- Deployment to a cloud platform
-
-> Future scope items are proposed improvements and should not be considered implemented unless verified.
-
----
-
-## 🎓 Project Information
-
-**Project Name:** InternTracker
-
-**Project Type:** Web-Based Internship Management System
-
-**Project Domain:** Web Development / Artificial Intelligence
+**Domain:** Web Development and Artificial Intelligence
 
 **Primary Technologies:** React, Node.js, Express, MongoDB, Python, Flask, VADER
 
-**Purpose:** To simplify internship management, monitor intern progress, support mentor evaluations, and generate internship reports.
-
----
-
-## 👨‍💻 Contributors
-
-Add the names of your project team members here.
-
----
-
-## 📄 License
-
-Specify the license applicable to your project repository.
-
----
-
-*InternTracker — Manage Internships. Monitor Progress. Evaluate Performance.*
+**Tagline:** Manage Internships. Monitor Progress. Evaluate Performance.
